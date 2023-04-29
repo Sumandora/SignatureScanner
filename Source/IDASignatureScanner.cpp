@@ -34,8 +34,8 @@ void* SignatureScanner::FindNextOccurrence(const Signature& signature, void* beg
 		if(DoesMatch(signature, begin))
 			return begin;
 		begin = reinterpret_cast<unsigned char*>(begin) + 1;
-                if(end && begin > end)
-                        return nullptr;
+		if(end && begin > end)
+			return nullptr;
 	}
 }
 
