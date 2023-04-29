@@ -29,11 +29,13 @@ bool SignatureScanner::DoesMatch(const Signature& signature, void* address) {
 	return true;
 }
 
-void* SignatureScanner::FindNextOccurrence(const Signature& signature, void* begin) {
+void* SignatureScanner::FindNextOccurrence(const Signature& signature, void* begin, void* end) {
 	while(true) {
 		if(DoesMatch(signature, begin))
 			return begin;
 		begin = reinterpret_cast<unsigned char*>(begin) + 1;
+                if(end && begin > end)
+                        return nullptr;
 	}
 }
 
