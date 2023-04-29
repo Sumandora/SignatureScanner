@@ -20,7 +20,7 @@ Signature SignatureScanner::BuildSignature(const std::string& str) {
 }
 
 bool SignatureScanner::DoesMatch(const Signature& signature, void* address) {
-	for(int i = 0; i < signature.size(); i++) {
+	for(size_t i = 0; i < signature.size(); i++) {
 		auto byte = signature[i];
 		if(byte.second && *(reinterpret_cast<unsigned char*>(address) + i) != byte.first)
 			return false;
