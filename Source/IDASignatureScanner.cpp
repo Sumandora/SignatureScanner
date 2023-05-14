@@ -1,7 +1,5 @@
 #include "IDASignatureScanner.hpp"
 
-#include <algorithm>
-#include <ranges>
 #include <sstream>
 
 Signature SignatureScanner::BuildSignature(const std::string& str) {
