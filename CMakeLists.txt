@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
-project(IDASignatureScanner)
+project(SignatureScanner)
 
 set(CMAKE_CXX_STANDARD 23)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_executable(IDASignatureScanner Source/IDASignatureScanner.cpp Example/Main.cpp)
-target_include_directories(IDASignatureScanner PRIVATE include)
+add_executable(SignatureScanner Source/SignatureScanner.cpp Example/Main.cpp)
+target_include_directories(SignatureScanner PRIVATE include)
