@@ -13,6 +13,7 @@ namespace SignatureScanner {
 		Signature() = delete;
 		Signature(const std::string& str);
 
+		inline std::size_t Size() { return bytes.size(); }
 		bool DoesMatch(void* address);
 
 		void* FindLastOccurrence(void* begin, void* end = nullptr);
