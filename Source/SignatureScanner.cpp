@@ -14,7 +14,7 @@ SignatureScanner::Signature::Signature(const std::string& str)
 	}
 }
 
-bool SignatureScanner::Signature::DoesMatch(void* address)
+bool SignatureScanner::Signature::DoesMatch(void* address) const
 {
 	for (size_t i = 0; i < bytes.size(); i++) {
 		auto byte = bytes[i];
@@ -25,7 +25,7 @@ bool SignatureScanner::Signature::DoesMatch(void* address)
 	return true;
 }
 
-void* SignatureScanner::Signature::FindLastOccurrence(void* begin, void* end)
+void* SignatureScanner::Signature::FindLastOccurrence(void* begin, void* end) const
 {
 	while (true) {
 		if (DoesMatch(begin))
@@ -36,7 +36,7 @@ void* SignatureScanner::Signature::FindLastOccurrence(void* begin, void* end)
 	}
 }
 
-void* SignatureScanner::Signature::FindNextOccurrence(void* begin, void* end)
+void* SignatureScanner::Signature::FindNextOccurrence(void* begin, void* end) const
 {
 	while (true) {
 		if (DoesMatch(begin))
@@ -47,7 +47,7 @@ void* SignatureScanner::Signature::FindNextOccurrence(void* begin, void* end)
 	}
 }
 
-std::vector<void*> SignatureScanner::Signature::FindAllOccurrences(void* begin, void* end)
+std::vector<void*> SignatureScanner::Signature::FindAllOccurrences(void* begin, void* end) const
 {
 	std::vector<void*> hits;
 
