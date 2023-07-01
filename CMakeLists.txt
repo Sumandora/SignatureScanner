@@ -5,5 +5,5 @@ set(CMAKE_CXX_STANDARD 23)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_executable(SignatureScanner Source/SignatureScanner.cpp Example/Main.cpp)
+add_executable(SignatureScanner Source/SignatureScanner.cpp Source/Signatures.cpp Example/Main.cpp)
 target_include_directories(SignatureScanner PRIVATE include)

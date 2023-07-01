@@ -1,61 +1,75 @@
 #include "SignatureScanner.hpp"
 
-#include <sstream>
-
-SignatureScanner::Signature::Signature(const std::string& str)
+SignatureScanner::Signature::Signature()
 {
-	std::istringstream iss(str);
-	std::string word;
-	while (std::getline(iss, word, ' ')) {
-		if (word == "?" || word == "??")
-			bytes.emplace_back(0x0, false);
-		else
-			bytes.emplace_back(strtol(word.c_str(), nullptr, 16), true);
-	}
+	elements = {};
 }
 
-bool SignatureScanner::Signature::DoesMatch(void* address) const
+SignatureScanner::Signature::Signature(std::vector<Element> elements)
 {
-	for (size_t i = 0; i < bytes.size(); i++) {
-		auto byte = bytes[i];
-		if (byte.second && *(reinterpret_cast<unsigned char*>(address) + i) != byte.first)
+	this->elements = elements;
+}
+
+bool SignatureScanner::Signature::DoesMatch(const char* addr) const
+{
+	for (size_t i = 0; i < elements.size(); i++) {
+		auto byte = elements[i];
+		if (byte.has_value() && *(addr + i) != byte.value())
 			return false;
 	}
 
 	return true;
 }
 
-void* SignatureScanner::Signature::FindLastOccurrence(void* begin, void* end) const
+// These '-= Length()' subtractions might be weird for some users
+//
+// A search after ABCDEF with '|' being begin/end
+// -------AAAAAAAAAAAAAAAABCDEF---------
+//        |              |
+// Should still be a hit here, because the first byte is inside the boundaries.
+// However when searching we expect that reading outside of begin/end
+// may lead to sigsegv or similiar faults, because we read non-readable memory regions.
+// In case you are reading this and wan't this behaviour, simply add/subtract the Length()
+// from the boundary that you want to extend
+
+const char* SignatureScanner::Signature::Prev(const char* addr, const char* end) const
 {
-	while (true) {
-		if (DoesMatch(begin))
-			return begin;
-		begin = reinterpret_cast<unsigned char*>(begin) - 1;
-		if (end && begin < end)
-			return nullptr;
+	addr -= Length();
+
+	while (!end || addr >= end) {
+		if (DoesMatch(addr))
+			return addr;
+		addr--;
 	}
+
+	return nullptr;
 }
 
-void* SignatureScanner::Signature::FindNextOccurrence(void* begin, void* end) const
+const char* SignatureScanner::Signature::Next(const char* addr, const char* end) const
 {
-	while (true) {
-		if (DoesMatch(begin))
-			return begin;
-		begin = reinterpret_cast<unsigned char*>(begin) + 1;
-		if (end && begin > end)
-			return nullptr;
+	if (end)
+		end -= Length();
+
+	while (!end || addr <= end) {
+		if (DoesMatch(addr))
+			return addr;
+		addr++;
 	}
+
+	return nullptr;
 }
 
-std::vector<void*> SignatureScanner::Signature::FindAllOccurrences(void* begin, void* end) const
+std::vector<const char*> SignatureScanner::Signature::All(const char* addr, const char* end) const
 {
-	std::vector<void*> hits;
+	if (end)
+		end -= Length();
 
-	while (true) {
-		if (DoesMatch(begin))
-			hits.emplace_back(begin);
-		begin = reinterpret_cast<unsigned char*>(begin) + 1;
-		if (begin > end)
-			return hits;
+	std::vector<const char*> hits;
+	while (!end || addr <= end) {
+		if (DoesMatch(addr))
+			hits.push_back(addr);
+		addr++;
 	}
+
+	return hits;
 }

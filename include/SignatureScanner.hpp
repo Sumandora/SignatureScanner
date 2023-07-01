@@ -1,29 +1,88 @@
 #ifndef SIGNATURESCANNER_HPP
 #define SIGNATURESCANNER_HPP
 
-#include <span>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace SignatureScanner {
+	using Element = std::optional<char>;
+
 	class Signature {
-		std::vector<std::pair<unsigned char, bool>> bytes;
+	protected:
+		std::vector<Element> elements;
 
 	public:
-		Signature() = delete;
-		Signature(const std::string& str);
+		Signature();
+		Signature(std::vector<Element>);
 
-		inline std::size_t Size() const { return bytes.size(); }
-		bool DoesMatch(void* address) const;
+		inline std::size_t Length() const
+		{
+			return elements.size();
+		}
 
-		void* FindLastOccurrence(void* begin, void* end = nullptr) const;
-		inline void* FindLastOccurrence(std::span<std::byte> span) const { return FindLastOccurrence(&span.front(), &span.back()); }
+		bool DoesMatch(const char* addr) const;
 
-		void* FindNextOccurrence(void* begin, void* end = nullptr) const;
-		inline void* FindNextOccurrence(std::span<std::byte> span) const { return FindNextOccurrence(&span.front(), &span.back()); }
+		template <typename T>
+		bool DoesMatch(std::add_const_t<T> addr) const
+		{
+			return DoesMatch(reinterpret_cast<const char*>(addr));
+		}
 
-		std::vector<void*> FindAllOccurrences(void* begin, void* end) const;
-		inline std::vector<void*> FindAllOccurrences(std::span<std::byte> span) const { return FindAllOccurrences(&span.front(), &span.back()); }
+		const char* Prev(const char* begin, const char* end) const;
+		const char* Next(const char* begin, const char* end) const;
+		std::vector<const char*> All(const char* begin, const char* end) const;
+
+		template <typename R, typename T, typename T2 = void*>
+		inline R Prev(T begin, T2 end = nullptr) const
+		{
+			const char* ptr = Prev(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			if constexpr (!std::is_const_v<std::remove_pointer_t<R>>)
+				return reinterpret_cast<R>(const_cast<char*>(ptr)); // This isn't good, but it removes lots of duplicated code
+			else
+				return reinterpret_cast<R>(ptr);
+		}
+
+		template <typename R, typename T, typename T2 = void*>
+		inline R Next(T begin, T2 end = nullptr) const
+		{
+			const char* ptr = Next(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			if constexpr (!std::is_const_v<std::remove_pointer_t<R>>)
+				return reinterpret_cast<R>(const_cast<char*>(ptr)); // This isn't good, but it removes lots of duplicated code
+			else
+				return reinterpret_cast<R>(ptr);
+		}
+
+		template <typename R, typename T, typename T2 = void*>
+		inline std::vector<R> All(T begin, T2 end = nullptr) const
+		{
+			std::vector<const char*> vector = All(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			if constexpr (std::is_convertible_v<std::vector<const char*>, std::vector<R>>)
+				return vector;
+			else {
+				std::vector<R> newVector{};
+				for (const char* v : vector) {
+					if constexpr (!std::is_const_v<std::remove_pointer_t<R>>)
+						newVector.push_back(reinterpret_cast<R>(const_cast<char*>(v))); // This isn't good, but it removes lots of duplicated code
+					else
+						newVector.push_back(reinterpret_cast<R>(v));
+				}
+
+				return newVector;
+			}
+		}
+	};
+
+	class StringSignature : public Signature {
+	public:
+		StringSignature() = delete;
+		StringSignature(const std::string& string);
+	};
+
+	class ByteSignature : public Signature {
+	public:
+		ByteSignature() = delete;
+		ByteSignature(const std::string& bytes);
 	};
 }
 
