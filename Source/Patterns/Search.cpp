@@ -1,16 +1,12 @@
 #include "SignatureScanner.hpp"
 
-SignatureScanner::Signature::Signature()
+#if defined(SIGNATURESCANNER_ENABLE_IDA_SEARCH) || defined(SIGNATURESCANNER_ENABLE_STRING_SEARCH)
+std::size_t SignatureScanner::PatternSignature::Length() const
 {
-	elements = {};
+	return elements.size();
 }
 
-SignatureScanner::Signature::Signature(std::vector<Element> elements)
-{
-	this->elements = elements;
-}
-
-bool SignatureScanner::Signature::DoesMatch(const char* addr) const
+bool SignatureScanner::PatternSignature::DoesMatch(const char* addr) const
 {
 	for (size_t i = 0; i < elements.size(); i++) {
 		auto byte = elements[i];
@@ -32,7 +28,7 @@ bool SignatureScanner::Signature::DoesMatch(const char* addr) const
 // In case you are reading this and wan't this behaviour, simply add/subtract the Length()
 // from the boundary that you want to extend
 
-const char* SignatureScanner::Signature::Prev(const char* addr, const char* end) const
+const char* SignatureScanner::PatternSignature::Prev(const char* addr, const char* end) const
 {
 	addr -= Length();
 
@@ -45,7 +41,7 @@ const char* SignatureScanner::Signature::Prev(const char* addr, const char* end)
 	return nullptr;
 }
 
-const char* SignatureScanner::Signature::Next(const char* addr, const char* end) const
+const char* SignatureScanner::PatternSignature::Next(const char* addr, const char* end) const
 {
 	if (end)
 		end -= Length();
@@ -59,7 +55,7 @@ const char* SignatureScanner::Signature::Next(const char* addr, const char* end)
 	return nullptr;
 }
 
-std::vector<const char*> SignatureScanner::Signature::All(const char* addr, const char* end) const
+std::vector<const char*> SignatureScanner::PatternSignature::All(const char* addr, const char* end) const
 {
 	if (end)
 		end -= Length();
@@ -73,3 +69,5 @@ std::vector<const char*> SignatureScanner::Signature::All(const char* addr, cons
 
 	return hits;
 }
+
+#endif

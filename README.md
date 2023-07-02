@@ -8,5 +8,7 @@ The Signature Scanner is a lightweight, C++ library designed for game hacking. I
 ## Features
 - Supports IDA signatures
 - Supports string search
+- Supports XRef searches
+- The ability to switch each feature on and off in a modular way 
 - Lightweight and easy to use
 - Designed for game hacking purposes
