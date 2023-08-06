@@ -19,3 +19,6 @@ target_compile_definitions(SignatureScanner PRIVATE SIGNATURESCANNER_ENABLE_XREF
 
 # In case you are running a x64 bit system but you are inspecting a 32 bit binary, you will need to set this:
 #target_compile_definitions(SignatureScanner PRIVATE SIGNATURESCANNER_FORCE_32BIT_MODE)
+
+enable_testing()
+add_test(NAME SignatureScannerTest COMMAND $<TARGET_FILE:SignatureScannerExample>)
