@@ -7,8 +7,11 @@ set(CMAKE_CXX_FLAGS "-rdynamic")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_executable(SignatureScanner Source/Patterns/Constructors.cpp Source/Patterns/Search.cpp Source/XRef/Constructors.cpp Source/XRef/Search.cpp Example/Main.cpp)
-target_include_directories(SignatureScanner PRIVATE include)
+add_library(SignatureScanner STATIC Source/Patterns/Constructors.cpp Source/Patterns/Search.cpp Source/XRef/Constructors.cpp Source/XRef/Search.cpp)
+target_include_directories(SignatureScanner PUBLIC include)
+
+add_executable(SignatureScannerExample Example/Main.cpp)
+target_link_libraries(SignatureScannerExample PRIVATE SignatureScanner)
 
 target_compile_definitions(SignatureScanner PRIVATE SIGNATURESCANNER_ENABLE_IDA_SEARCH)
 target_compile_definitions(SignatureScanner PRIVATE SIGNATURESCANNER_ENABLE_STRING_SEARCH)
