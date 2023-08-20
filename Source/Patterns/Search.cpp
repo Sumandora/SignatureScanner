@@ -1,12 +1,12 @@
 #include "SignatureScanner.hpp"
 
 #if defined(SIGNATURESCANNER_ENABLE_IDA_SEARCH) || defined(SIGNATURESCANNER_ENABLE_STRING_SEARCH)
-std::size_t SignatureScanner::PatternSignature::Length() const
+std::size_t SignatureScanner::PatternSignature::length() const
 {
 	return elements.size();
 }
 
-bool SignatureScanner::PatternSignature::DoesMatch(const char* addr) const
+bool SignatureScanner::PatternSignature::doesMatch(const char* addr) const
 {
 	for (size_t i = 0; i < elements.size(); i++) {
 		auto byte = elements[i];
@@ -28,12 +28,12 @@ bool SignatureScanner::PatternSignature::DoesMatch(const char* addr) const
 // In case you are reading this and wan't this behaviour, simply add/subtract the Length()
 // from the boundary that you want to extend
 
-const char* SignatureScanner::PatternSignature::Prev(const char* addr, const char* end) const
+const char* SignatureScanner::PatternSignature::prev(const char* addr, const char* end) const
 {
-	addr -= Length();
+	addr -= length();
 
 	while (!end || addr >= end) {
-		if (DoesMatch(addr))
+		if (doesMatch(addr))
 			return addr;
 		addr--;
 	}
@@ -41,13 +41,13 @@ const char* SignatureScanner::PatternSignature::Prev(const char* addr, const cha
 	return nullptr;
 }
 
-const char* SignatureScanner::PatternSignature::Next(const char* addr, const char* end) const
+const char* SignatureScanner::PatternSignature::next(const char* addr, const char* end) const
 {
 	if (end)
-		end -= Length();
+		end -= length();
 
 	while (!end || addr <= end) {
-		if (DoesMatch(addr))
+		if (doesMatch(addr))
 			return addr;
 		addr++;
 	}
@@ -55,14 +55,14 @@ const char* SignatureScanner::PatternSignature::Next(const char* addr, const cha
 	return nullptr;
 }
 
-std::vector<const char*> SignatureScanner::PatternSignature::All(const char* addr, const char* end) const
+std::vector<const char*> SignatureScanner::PatternSignature::all(const char* addr, const char* end) const
 {
 	if (end)
-		end -= Length();
+		end -= length();
 
 	std::vector<const char*> hits;
 	while (!end || addr <= end) {
-		if (DoesMatch(addr))
+		if (doesMatch(addr))
 			hits.push_back(addr);
 		addr++;
 	}

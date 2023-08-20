@@ -8,15 +8,15 @@
 namespace SignatureScanner {
 
 	class Signature {
-		virtual const char* Prev(const char* begin, const char* end) const = 0;
-		virtual const char* Next(const char* begin, const char* end) const = 0;
-		virtual std::vector<const char*> All(const char* begin, const char* end) const = 0;
+		virtual const char* prev(const char* begin, const char* end) const = 0;
+		virtual const char* next(const char* begin, const char* end) const = 0;
+		virtual std::vector<const char*> all(const char* begin, const char* end) const = 0;
 
 	public:
 		template <typename R, typename T, typename T2 = void*>
-		inline R FindPrev(T begin, T2 end = nullptr) const
+		inline R findPrev(T begin, T2 end = nullptr) const
 		{
-			const char* ptr = Prev(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			const char* ptr = prev(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
 			if constexpr (!std::is_const_v<std::remove_pointer_t<R>>)
 				return reinterpret_cast<R>(const_cast<char*>(ptr)); // This isn't good, but it removes lots of duplicated code
 			else
@@ -24,9 +24,9 @@ namespace SignatureScanner {
 		}
 
 		template <typename R, typename T, typename T2 = void*>
-		inline R FindNext(T begin, T2 end = nullptr) const
+		inline R findNext(T begin, T2 end = nullptr) const
 		{
-			const char* ptr = Next(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			const char* ptr = next(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
 			if constexpr (!std::is_const_v<std::remove_pointer_t<R>>)
 				return reinterpret_cast<R>(const_cast<char*>(ptr)); // This isn't good, but it removes lots of duplicated code
 			else
@@ -34,9 +34,9 @@ namespace SignatureScanner {
 		}
 
 		template <typename R, typename T, typename T2 = void*>
-		inline std::vector<R> FindAll(T begin, T2 end = nullptr) const
+		inline std::vector<R> findAll(T begin, T2 end = nullptr) const
 		{
-			std::vector<const char*> vector = All(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			std::vector<const char*> vector = all(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
 			if constexpr (std::is_convertible_v<std::vector<const char*>, std::vector<R>>)
 				return vector;
 			else {
@@ -58,21 +58,21 @@ namespace SignatureScanner {
 		using Element = std::optional<char>;
 
 	private:
-		virtual const char* Prev(const char* begin, const char* end) const override;
-		virtual const char* Next(const char* begin, const char* end) const override;
-		virtual std::vector<const char*> All(const char* begin, const char* end) const override;
+		virtual const char* prev(const char* begin, const char* end) const override;
+		virtual const char* next(const char* begin, const char* end) const override;
+		virtual std::vector<const char*> all(const char* begin, const char* end) const override;
 
 	protected:
 		std::vector<Element> elements;
 
 	public:
-		std::size_t Length() const;
-		bool DoesMatch(const char* addr) const;
+		std::size_t length() const;
+		bool doesMatch(const char* addr) const;
 
 		template <typename T>
-		bool DoesMatch(std::add_const_t<T> addr) const
+		bool doesMatch(std::add_const_t<T> addr) const
 		{
-			return DoesMatch(reinterpret_cast<const char*>(addr));
+			return doesMatch(reinterpret_cast<const char*>(addr));
 		}
 	};
 #endif
@@ -99,14 +99,14 @@ namespace SignatureScanner {
 		const bool relativeReferences;
 		const bool absoluteReferences;
 
-		virtual const char* Prev(const char* begin, const char* end) const override;
-		virtual const char* Next(const char* begin, const char* end) const override;
-		virtual std::vector<const char*> All(const char* begin, const char* end) const override;
+		virtual const char* prev(const char* begin, const char* end) const override;
+		virtual const char* next(const char* begin, const char* end) const override;
+		virtual std::vector<const char*> all(const char* begin, const char* end) const override;
 
 	public:
 		XRefSignature(const void* address, const bool relativeReferences = true, const bool absoluteReferences = true);
 
-		bool DoesMatch(const char* addr, const std::size_t space /* relative (2 or 4) and absolute (4 or 8) references have different lengths */) const;
+		bool doesMatch(const char* addr, const std::size_t space /* relative (2 or 4) and absolute (4 or 8) references have different lengths */) const;
 	};
 #endif
 }
