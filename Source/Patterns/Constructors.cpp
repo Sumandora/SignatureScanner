@@ -2,7 +2,6 @@
 
 #include <sstream>
 
-#ifdef SIGNATURESCANNER_ENABLE_STRING_SEARCH
 SignatureScanner::StringSignature::StringSignature(const std::string& string)
 	: PatternSignature()
 {
@@ -10,9 +9,7 @@ SignatureScanner::StringSignature::StringSignature(const std::string& string)
 		elements.push_back(static_cast<char>(c));
 	}
 }
-#endif
 
-#ifdef SIGNATURESCANNER_ENABLE_IDA_SEARCH
 SignatureScanner::ByteSignature::ByteSignature(const std::string& string)
 	: PatternSignature()
 {
@@ -25,4 +22,3 @@ SignatureScanner::ByteSignature::ByteSignature(const std::string& string)
 			elements.emplace_back(static_cast<char>(strtol(word.c_str(), nullptr, 16)));
 	}
 }
-#endif

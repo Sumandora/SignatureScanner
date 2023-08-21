@@ -1,6 +1,5 @@
 #include "SignatureScanner.hpp"
 
-#if defined(SIGNATURESCANNER_ENABLE_IDA_SEARCH) || defined(SIGNATURESCANNER_ENABLE_STRING_SEARCH)
 std::size_t SignatureScanner::PatternSignature::length() const
 {
 	return elements.size();
@@ -69,5 +68,3 @@ std::vector<const char*> SignatureScanner::PatternSignature::all(const char* add
 
 	return hits;
 }
-
-#endif

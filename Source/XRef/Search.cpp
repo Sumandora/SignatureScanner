@@ -1,14 +1,9 @@
 #include "SignatureScanner.hpp"
+
 #include <cstdint>
 #include <limits>
 
-#ifdef SIGNATURESCANNER_ENABLE_XREF_SEARCH
-
-#ifdef SIGNATURESCANNER_FORCE_32BIT_MODE
-using RelAddrType = std::int16_t;
-#else
 using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
-#endif
 
 bool SignatureScanner::XRefSignature::doesMatch(const char* addr, const std::size_t space) const
 {
@@ -61,4 +56,3 @@ std::vector<const char*> SignatureScanner::XRefSignature::all(const char* addr, 
 
 	return hits;
 }
-#endif

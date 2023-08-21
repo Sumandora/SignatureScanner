@@ -53,7 +53,6 @@ namespace SignatureScanner {
 		}
 	};
 
-#if defined(SIGNATURESCANNER_ENABLE_IDA_SEARCH) || defined(SIGNATURESCANNER_ENABLE_STRING_SEARCH)
 	class PatternSignature : public Signature {
 		using Element = std::optional<char>;
 
@@ -75,25 +74,19 @@ namespace SignatureScanner {
 			return doesMatch(reinterpret_cast<const char*>(addr));
 		}
 	};
-#endif
 
-#ifdef SIGNATURESCANNER_ENABLE_STRING_SEARCH
 	class StringSignature : public PatternSignature {
 	public:
 		StringSignature() = delete;
 		StringSignature(const std::string& string);
 	};
-#endif
 
-#ifdef SIGNATURESCANNER_ENABLE_IDA_SEARCH
 	class ByteSignature : public PatternSignature {
 	public:
 		ByteSignature() = delete;
 		ByteSignature(const std::string& bytes);
 	};
-#endif
 
-#ifdef SIGNATURESCANNER_ENABLE_XREF_SEARCH
 	class XRefSignature : public Signature {
 		const char* address;
 		const bool relativeReferences;
@@ -108,7 +101,6 @@ namespace SignatureScanner {
 
 		bool doesMatch(const char* addr, const std::size_t space /* relative (2 or 4) and absolute (4 or 8) references have different lengths */) const;
 	};
-#endif
 }
 
 #endif
