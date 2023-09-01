@@ -10,3 +10,4 @@ DerivePointerAlignment: false
 AlignEscapedNewlines: Right
 QualifierAlignment: Left
 SpaceBeforeCpp11BracedList: false
+IndentExternBlock: Indent
