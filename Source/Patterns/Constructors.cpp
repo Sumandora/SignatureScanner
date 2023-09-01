@@ -6,7 +6,7 @@ SignatureScanner::StringSignature::StringSignature(const std::string& string)
 	: PatternSignature()
 {
 	for (char c : string) {
-		elements.push_back(static_cast<char>(c));
+		elements.emplace_back(static_cast<char>(c));
 	}
 }
 

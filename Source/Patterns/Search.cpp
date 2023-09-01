@@ -22,9 +22,9 @@ bool SignatureScanner::PatternSignature::doesMatch(const char* addr) const
 // -------AAAAAAAAAAAAAAAABCDEF---------
 //        |              |
 // Should still be a hit here, because the first byte is inside the boundaries.
-// However when searching we expect that reading outside of begin/end
+// However, when searching we expect that reading outside begin/end
 // may lead to sigsegv or similiar faults, because we read non-readable memory regions.
-// In case you are reading this and wan't this behaviour, simply add/subtract the Length()
+// In case you are reading this and want this behaviour, simply add/subtract the Length()
 // from the boundary that you want to extend
 
 const char* SignatureScanner::PatternSignature::prev(const char* addr, const char* end) const
