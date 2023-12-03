@@ -84,8 +84,8 @@ namespace SignatureScanner {
 		explicit ByteSignature(const std::string& bytes);
 	};
 
-	class XRefSignature : public Signature<PatternSignature> {
-		friend class Signature<PatternSignature>;
+	class XRefSignature : public Signature<XRefSignature> {
+		friend class Signature<XRefSignature>;
 
 		const char* address;
 		const bool relativeReferences;
