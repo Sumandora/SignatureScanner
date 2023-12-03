@@ -7,16 +7,13 @@
 
 namespace SignatureScanner {
 
+	template <typename Derived>
 	class Signature {
-		[[nodiscard]] virtual const char* prev(const char* begin, const char* end) const = 0;
-		[[nodiscard]] virtual const char* next(const char* begin, const char* end) const = 0;
-		[[nodiscard]] virtual std::vector<const char*> all(const char* begin, const char* end) const = 0;
-
 	public:
 		template <typename R, typename T, typename T2 = void*>
 		[[nodiscard]] inline R findPrev(T begin, T2 end = nullptr) const
 		{
-			const char* ptr = prev(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			const char* ptr = static_cast<const Derived*>(this)->prev(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
 			if constexpr (!std::is_const_v<std::remove_pointer_t<R>>)
 				return reinterpret_cast<R>(const_cast<char*>(ptr)); // This isn't good, but it removes lots of duplicated code
 			else
@@ -26,7 +23,7 @@ namespace SignatureScanner {
 		template <typename R, typename T, typename T2 = void*>
 		[[nodiscard]] inline R findNext(T begin, T2 end = nullptr) const
 		{
-			const char* ptr = next(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			const char* ptr = static_cast<const Derived*>(this)->next(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
 			if constexpr (!std::is_const_v<std::remove_pointer_t<R>>)
 				return reinterpret_cast<R>(const_cast<char*>(ptr)); // This isn't good, but it removes lots of duplicated code
 			else
@@ -36,7 +33,7 @@ namespace SignatureScanner {
 		template <typename R, typename T, typename T2 = void*>
 		[[nodiscard]] inline std::vector<R> findAll(T begin, T2 end = nullptr) const
 		{
-			std::vector<const char*> vector = all(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
+			std::vector<const char*> vector = static_cast<const Derived*>(this)->all(reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end));
 			if constexpr (std::is_convertible_v<std::vector<const char*>, std::vector<R>>)
 				return vector;
 			else {
@@ -53,19 +50,21 @@ namespace SignatureScanner {
 		}
 	};
 
-	class PatternSignature : public Signature {
+	class PatternSignature : public Signature<PatternSignature> {
+		friend class Signature<PatternSignature>;
+
 		using Element = std::optional<char>;
 
 	private:
-		[[nodiscard]] const char* prev(const char* begin, const char* end) const override;
-		[[nodiscard]] const char* next(const char* begin, const char* end) const override;
-		[[nodiscard]] std::vector<const char*> all(const char* begin, const char* end) const override;
+		[[nodiscard]] const char* prev(const char* begin, const char* end) const;
+		[[nodiscard]] const char* next(const char* begin, const char* end) const;
+		[[nodiscard]] std::vector<const char*> all(const char* begin, const char* end) const;
 
 	protected:
 		std::vector<Element> elements;
 
 	public:
-		std::size_t length() const;
+		[[nodiscard]] std::size_t length() const;
 		[[nodiscard]] bool doesMatch(const char* addr) const;
 
 		template <typename T>
@@ -85,14 +84,16 @@ namespace SignatureScanner {
 		explicit ByteSignature(const std::string& bytes);
 	};
 
-	class XRefSignature : public Signature {
+	class XRefSignature : public Signature<PatternSignature> {
+		friend class Signature<PatternSignature>;
+
 		const char* address;
 		const bool relativeReferences;
 		const bool absoluteReferences;
 
-		[[nodiscard]] const char* prev(const char* begin, const char* end) const override;
-		[[nodiscard]] const char* next(const char* begin, const char* end) const override;
-		[[nodiscard]] std::vector<const char*> all(const char* begin, const char* end) const override;
+		[[nodiscard]] const char* prev(const char* begin, const char* end) const;
+		[[nodiscard]] const char* next(const char* begin, const char* end) const;
+		[[nodiscard]] std::vector<const char*> all(const char* begin, const char* end) const;
 
 	public:
 		explicit XRefSignature(const void* address, bool relativeReferences = true, bool absoluteReferences = true);
