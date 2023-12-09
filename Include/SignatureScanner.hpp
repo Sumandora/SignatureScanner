@@ -65,7 +65,7 @@ namespace SignatureScanner {
 		std::vector<Element> elements;
 
 	public:
-		std::size_t length() const;
+		[[nodiscard]] std::size_t length() const;
 		[[nodiscard]] bool doesMatch(const char* addr) const;
 
 		template <typename T>
