@@ -82,7 +82,7 @@ namespace SignatureScanner {
 
 	class ByteSignature : public PatternSignature {
 	public:
-		explicit ByteSignature(const std::string& bytes);
+		explicit ByteSignature(const std::string& bytes, char wildcard = '?');
 	};
 
 	class XRefSignature : public Signature {
