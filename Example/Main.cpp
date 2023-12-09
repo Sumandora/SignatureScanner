@@ -71,11 +71,12 @@ int main()
 	void* handle = dlopen(nullptr, RTLD_GLOBAL | RTLD_NOW);
 	link_map* linkMap;
 	dlinfo(handle, RTLD_DI_LINKMAP, &linkMap);
+	void* baseAddress = reinterpret_cast<void*>(linkMap->l_addr);
 	dlclose(handle);
 
 	testByteSignatures();
-	const char* addr = testStringSignatures(reinterpret_cast<void*>(linkMap->l_addr));
-	testXRefSignatures(reinterpret_cast<void*>(linkMap->l_addr), addr);
+	const char* addr = testStringSignatures(baseAddress);
+	testXRefSignatures(baseAddress, addr);
 
 	return 0;
 }
