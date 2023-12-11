@@ -22,9 +22,10 @@ void testByteSignatures()
 	};
 	auto signature = ByteSignature("1d e4 ff 9a 63 ?? 37 6f d 24");
 
-	void* hit = signature.findNext<void*>(byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
+	auto hit = signature.findNext<void*, void*, void*>(byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
+	assert(hit.has_value());
 
-	size_t offset = reinterpret_cast<unsigned char*>(hit) - byte_array_hex;
+	size_t offset = reinterpret_cast<unsigned char*>(hit.value()) - byte_array_hex;
 
 	printf("Offset: %ld\n", offset);
 
@@ -32,9 +33,10 @@ void testByteSignatures()
 
 	signature = ByteSignature("1e bb 5a f2 65 e5 53 85");
 
-	hit = signature.findPrev<void*>(hit, byte_array_hex);
+	hit = signature.findPrev<void*, void*, void*>(hit.value(), byte_array_hex);
+	assert(hit.has_value());
 
-	offset = reinterpret_cast<unsigned char*>(hit) - byte_array_hex;
+	offset = reinterpret_cast<unsigned char*>(hit.value()) - byte_array_hex;
 	printf("Offset: %ld\n", offset);
 
 	std::vector<void*> hits = ByteSignature("a9").findAll<void*>(byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
@@ -47,20 +49,23 @@ extern "C" /*don't mangle the name*/ const char* testStringSignatures(void* base
 {
 	const char* string = "We are looking for this string in our .rodata";
 	auto signature = StringSignature(strdup(string));
-	const char* string2 = signature.findNext<const char*>(baseAddress);
-	printf("'%s' = '%s'\n", string, string2);
+	auto string2 = signature.findNext<const char*>(baseAddress);
+	assert(string2.has_value());
+	printf("'%s' = '%s'\n", string, string2.value());
 
 	assert(string == string2); // Have we found the original?
 
-	return string2;
+	return string2.value();
 }
 
 void testXRefSignatures(void* baseAddress, const char* string)
 {
 	XRefSignature xrefSignature(string);
-	void* addr = xrefSignature.findNext<void*>(baseAddress);
+	auto addr = xrefSignature.findNext<void*>(baseAddress);
+	assert(addr.has_value());
+
 	Dl_info dlInfo;
-	int dlAddr = dladdr(addr, &dlInfo);
+	int dlAddr = dladdr(addr.value(), &dlInfo);
 	assert(dlAddr != 0);
 	printf("I found the string inside the following method: %s\n", dlInfo.dli_sname);
 	assert(strcmp(dlInfo.dli_sname, "testStringSignatures") == 0);

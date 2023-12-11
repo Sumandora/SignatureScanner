@@ -5,11 +5,11 @@ std::size_t SignatureScanner::PatternSignature::length() const
 	return elements.size();
 }
 
-bool SignatureScanner::PatternSignature::doesMatch(const char* addr) const
+bool SignatureScanner::PatternSignature::doesMatch(std::uintptr_t addr) const
 {
 	for (size_t i = 0; i < elements.size(); i++) {
 		auto byte = elements[i];
-		if (byte.has_value() && *(addr + i) != byte.value())
+		if (byte.has_value() && *reinterpret_cast<std::byte*>(addr + i) != byte.value())
 			return false;
 	}
 
@@ -27,39 +27,39 @@ bool SignatureScanner::PatternSignature::doesMatch(const char* addr) const
 // In case you are reading this and want this behaviour, simply add/subtract the Length()
 // from the boundary that you want to extend
 
-const char* SignatureScanner::PatternSignature::prev(const char* addr, const char* end) const
+std::optional<std::uintptr_t> SignatureScanner::PatternSignature::prev(std::uintptr_t addr, std::optional<std::uintptr_t> end) const
 {
 	addr -= length();
 
-	while (!end || addr >= end) {
+	while (!end.has_value() || addr >= end.value()) {
 		if (doesMatch(addr))
 			return addr;
 		addr--;
 	}
 
-	return nullptr;
+	return std::nullopt;
 }
 
-const char* SignatureScanner::PatternSignature::next(const char* addr, const char* end) const
+std::optional<std::uintptr_t> SignatureScanner::PatternSignature::next(std::uintptr_t addr, std::optional<std::uintptr_t> end) const
 {
-	if (end)
-		end -= length();
+	if (end.has_value())
+		end.value() -= length();
 
-	while (!end || addr <= end) {
+	while (!end.has_value() || addr <= end.value()) {
 		if (doesMatch(addr))
 			return addr;
 		addr++;
 	}
 
-	return nullptr;
+	return std::nullopt;
 }
 
-std::vector<const char*> SignatureScanner::PatternSignature::all(const char* addr, const char* end) const
+std::vector<std::uintptr_t> SignatureScanner::PatternSignature::all(std::uintptr_t addr, std::uintptr_t end) const
 {
 	if (end)
 		end -= length();
 
-	std::vector<const char*> hits;
+	std::vector<std::uintptr_t> hits;
 	while (!end || addr <= end) {
 		if (doesMatch(addr))
 			hits.push_back(addr);
