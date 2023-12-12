@@ -14,6 +14,8 @@ namespace SignatureScanner {
 		[[nodiscard]] virtual std::vector<std::uintptr_t> all(std::uintptr_t begin, std::uintptr_t end) const = 0;
 
 	public:
+		virtual ~Signature() = default;
+
 		template <typename R = std::uintptr_t, typename T, typename T2 = std::uintptr_t>
 		[[nodiscard]] inline std::optional<R> findPrev(T begin, std::optional<T2> end = std::nullopt) const
 		{
@@ -56,13 +58,13 @@ namespace SignatureScanner {
 		[[nodiscard]] std::optional<std::uintptr_t> next(std::uintptr_t begin, std::optional<std::uintptr_t> end) const override;
 		[[nodiscard]] std::vector<std::uintptr_t> all(std::uintptr_t begin, std::uintptr_t end) const override;
 
-		[[nodiscard]] bool doesMatch(std::uintptr_t addr) const;
-
 	protected:
 		std::vector<Element> elements;
 
 	public:
 		[[nodiscard]] std::size_t length() const;
+
+		[[nodiscard]] bool doesMatch(std::uintptr_t addr) const;
 
 		template <typename T = std::uintptr_t>
 		[[nodiscard]] bool doesMatch(T addr) const
@@ -92,11 +94,11 @@ namespace SignatureScanner {
 		[[nodiscard]] std::optional<std::uintptr_t> next(std::uintptr_t begin, std::optional<std::uintptr_t> end) const override;
 		[[nodiscard]] std::vector<std::uintptr_t> all(std::uintptr_t begin, std::uintptr_t end) const override;
 
-		[[nodiscard]] bool doesMatch(std::uintptr_t addr, std::size_t space) const;
-
 	public:
 		explicit XRefSignature(std::uintptr_t address, bool relativeReferences = true, bool absoluteReferences = true);
 		explicit XRefSignature(const void* address, bool relativeReferences = true, bool absoluteReferences = true);
+
+		[[nodiscard]] bool doesMatch(std::uintptr_t addr, std::size_t space) const;
 
 		template <typename T = std::uintptr_t>
 		[[nodiscard]] bool doesMatch(T addr, std::size_t space /* relative (2 or 4) and absolute (4 or 8) references have different lengths */) const

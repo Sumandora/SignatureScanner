@@ -18,4 +18,14 @@ if(PROJECT_IS_TOP_LEVEL)
 
 	enable_testing()
 	add_test(NAME SignatureScannerTest COMMAND $<TARGET_FILE:SignatureScannerExample>)
+
+	# C Support, is available by using the C wrapper
+	add_subdirectory("CWrapper")
+
+	add_executable(SignatureScannerExampleC "${PROJECT_SOURCE_DIR}/ExampleC/Main.c")
+	target_link_libraries(SignatureScannerExampleC PRIVATE SignatureScannerCWrapper)
+	target_link_options(SignatureScannerExampleC PRIVATE "-rdynamic") # Embed function names into the example binary
+	target_compile_options(SignatureScannerExampleC PRIVATE "-Wno-int-conversion" "-Wno-pointer-integer-compare")
+
+	add_test(NAME SignatureScannerTestC COMMAND $<TARGET_FILE:SignatureScannerExampleC>)
 endif()
