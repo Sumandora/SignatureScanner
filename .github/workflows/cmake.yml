@@ -19,5 +19,5 @@ jobs:
       run: cmake --build ${{github.workspace}}/Build --config ${{env.BUILD_TYPE}}
 
     - name: Test
-      working-directory: ${{github.workspace}}/Build
+      working-directory: ${{github.workspace}}/Build/Example
       run: ctest -C ${{env.BUILD_TYPE}}
