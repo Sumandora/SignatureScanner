@@ -47,6 +47,8 @@ void testByteSignatures()
 
 	printf("0xA9 has %zu hits\n", count);
 	assert(count == 3);
+
+	signaturescanner_free(signature);
 }
 
 const char* testStringSignatures(void* baseAddress)
@@ -59,19 +61,21 @@ const char* testStringSignatures(void* baseAddress)
 
 	assert(string == string2); // Have we found the original?
 
+	signaturescanner_free(signature);
 	return string2;
 }
 
 void testXRefSignatures(void* baseAddress, const char* string)
 {
-	void* xrefSignature = signaturescanner_createXRefSignature(string, true, true);
-	uintptr_t addr = signaturescanner_next(xrefSignature, baseAddress);
+	void* signature = signaturescanner_createXRefSignature(string, true, true);
+	uintptr_t addr = signaturescanner_next(signature, baseAddress);
 	assert(addr != NULL);
 
 	Dl_info dlInfo;
 	dladdr(addr, &dlInfo);
 	printf("I found the string inside the following method: %s\n", dlInfo.dli_sname);
 	assert(strcmp(dlInfo.dli_sname, "testStringSignatures") == 0);
+	signaturescanner_free(signature);
 }
 
 int main()

@@ -86,7 +86,7 @@ namespace SignatureScanner {
 	};
 
 	class XRefSignature : public Signature {
-		std::uintptr_t address;
+		const std::uintptr_t address;
 		const bool relativeReferences;
 		const bool absoluteReferences;
 

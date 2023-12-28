@@ -10,5 +10,6 @@ target_compile_options(SignatureScanner PRIVATE "-Ofast")
 target_compile_features(SignatureScanner PRIVATE cxx_std_17)
 
 if(PROJECT_IS_TOP_LEVEL)
+	enable_testing()
 	add_subdirectory("Example")
 endif()

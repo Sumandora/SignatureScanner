@@ -60,8 +60,8 @@ extern "C" /*don't mangle the name*/ const char* testStringSignatures(void* base
 
 void testXRefSignatures(void* baseAddress, const char* string)
 {
-	XRefSignature xrefSignature(string);
-	auto addr = xrefSignature.findNext<void*>(baseAddress);
+	XRefSignature signature(string);
+	auto addr = signature.findNext<void*>(baseAddress);
 	assert(addr.has_value());
 
 	Dl_info dlInfo;
