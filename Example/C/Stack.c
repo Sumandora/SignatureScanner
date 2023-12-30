@@ -45,7 +45,10 @@ void testByteSignatures()
 
 	uintptr_t* ptr = NULL;
 	size_t count;
-	signaturescanner_all(signaturescanner_createByteSignature("a9", '?'), ptr, &count, byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
+	char newSignature[sizeofByteSignature];
+	signaturescanner_constructByteSignature(newSignature, "a9", '?');
+	signaturescanner_all(newSignature, ptr, &count, byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
+	signaturescanner_cleanup(newSignature);
 
 	printf("0xA9 has %zu hits\n", count);
 	assert(count == 3);

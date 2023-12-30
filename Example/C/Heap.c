@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <link.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "SignatureScanner.h"
 
@@ -21,7 +22,8 @@ void testByteSignatures()
 		0xad, 0xaf, 0x7c, 0x8, 0xee, 0xca, 0xdf, 0xdb, 0x2c, 0x76,
 		0xa9, 0x49, 0xb8, 0xf5, 0xcd, 0x4d, 0xa9, 0x14, 0xc0, 0xaf
 	};
-	void* signature = signaturescanner_createByteSignature("1d e4 ff 9a 63 ?? 37 6f d 24", '?');
+	void* signature = malloc(sizeofByteSignature);
+	signaturescanner_constructByteSignature(signature, "1d e4 ff 9a 63 ?? 37 6f d 24", '?');
 
 	uintptr_t hit = signaturescanner_next_bounded(signature, &byte_array_hex, &byte_array_hex + sizeof(byte_array_hex));
 	assert(hit != NULL);
@@ -32,8 +34,8 @@ void testByteSignatures()
 
 	assert(offset == 41);
 
-	signaturescanner_free(signature);
-	signature = signaturescanner_createByteSignature("1e bb 5a f2 65 e5 53 85", '?');
+	signaturescanner_cleanup(signature);
+	signaturescanner_constructByteSignature(signature, "1e bb 5a f2 65 e5 53 85", '?');
 
 	hit = signaturescanner_prev_bounded(signature, hit, byte_array_hex);
 	assert(hit != NULL);
@@ -43,31 +45,39 @@ void testByteSignatures()
 
 	uintptr_t* ptr = NULL;
 	size_t count;
-	signaturescanner_all(signaturescanner_createByteSignature("a9", '?'), ptr, &count, byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
+	void* newSignature = malloc(sizeofByteSignature);
+	signaturescanner_constructByteSignature(newSignature, "a9", '?');
+	signaturescanner_all(newSignature, ptr, &count, byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
+	signaturescanner_cleanup(newSignature);
+	free(newSignature);
 
 	printf("0xA9 has %zu hits\n", count);
 	assert(count == 3);
 
-	signaturescanner_free(signature);
+	signaturescanner_cleanup(signature);
+	free(signature);
 }
 
 const char* testStringSignatures(void* baseAddress)
 {
 	const char* string = "We are looking for this string in our .rodata";
-	void* signature = signaturescanner_createStringSignature(strdup(string));
+	void* signature = malloc(sizeofStringSignature);
+	signaturescanner_constructStringSignature(signature, strdup(string));
 	uintptr_t string2 = signaturescanner_next(signature, baseAddress);
 	assert(string2 != NULL);
 	printf("'%s' = '%s'\n", string, (const char*)string2);
 
 	assert(string == string2); // Have we found the original?
 
-	signaturescanner_free(signature);
+	signaturescanner_cleanup(signature);
+	free(signature);
 	return string2;
 }
 
 void testXRefSignatures(void* baseAddress, const char* string)
 {
-	void* signature = signaturescanner_createXRefSignature(string, true, true);
+	void* signature = malloc(sizeofXRefSignature);
+	signaturescanner_constructXRefSignature(signature, string, true, true);
 	uintptr_t addr = signaturescanner_next(signature, baseAddress);
 	assert(addr != NULL);
 
@@ -75,7 +85,8 @@ void testXRefSignatures(void* baseAddress, const char* string)
 	dladdr(addr, &dlInfo);
 	printf("I found the string inside the following method: %s\n", dlInfo.dli_sname);
 	assert(strcmp(dlInfo.dli_sname, "testStringSignatures") == 0);
-	signaturescanner_free(signature);
+	signaturescanner_cleanup(signature);
+	free(signature);
 }
 
 int main()
