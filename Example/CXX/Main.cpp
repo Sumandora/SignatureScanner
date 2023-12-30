@@ -20,26 +20,27 @@ void testByteSignatures()
 		0xad, 0xaf, 0x7c, 0x8, 0xee, 0xca, 0xdf, 0xdb, 0x2c, 0x76,
 		0xa9, 0x49, 0xb8, 0xf5, 0xcd, 0x4d, 0xa9, 0x14, 0xc0, 0xaf
 	};
-	auto signature = ByteSignature("1d e4 ff 9a 63 ?? 37 6f d 24");
+	auto signature = ByteSignature{ "1d e4 ff 9a 63 ?? 37 6f d 24" };
 
-	auto hit = signature.findNext<void*, void*, void*>(byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
+	auto hit = signature.findNext<unsigned char*, void*, void*>(byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
 	assert(hit.has_value());
 
-	size_t offset = reinterpret_cast<unsigned char*>(hit.value()) - byte_array_hex;
+	size_t offset = hit.value() - byte_array_hex;
 
 	printf("Offset: %ld\n", offset);
 
 	assert(offset == 41);
 
-	signature = ByteSignature("1e bb 5a f2 65 e5 53 85");
+	signature = ByteSignature{ "1e bb 5a f2 65 e5 53 85" };
 
-	hit = signature.findPrev<void*, void*, void*>(hit.value(), byte_array_hex);
+	hit = signature.findPrev<unsigned char*, void*, void*>(hit.value(), byte_array_hex);
 	assert(hit.has_value());
 
-	offset = reinterpret_cast<unsigned char*>(hit.value()) - byte_array_hex;
+	offset = hit.value() - byte_array_hex;
 	printf("Offset: %ld\n", offset);
+	assert(offset == 12);
 
-	std::vector<void*> hits = ByteSignature("a9").findAll<void*>(byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
+	std::vector<void*> hits = ByteSignature{ "a9" }.findAll<void*>(byte_array_hex, byte_array_hex + sizeof(byte_array_hex));
 
 	printf("0xA9 has %zu hits\n", hits.size());
 	assert(hits.size() == 3);
@@ -48,7 +49,7 @@ void testByteSignatures()
 extern "C" /*don't mangle the name*/ const char* testStringSignatures(void* baseAddress)
 {
 	const char* string = "We are looking for this string in our .rodata";
-	auto signature = StringSignature(strdup(string));
+	auto signature = StringSignature{ strdup(string) };
 	auto string2 = signature.findNext<const char*>(baseAddress);
 	assert(string2.has_value());
 	printf("'%s' = '%s'\n", string, string2.value());
@@ -60,7 +61,7 @@ extern "C" /*don't mangle the name*/ const char* testStringSignatures(void* base
 
 void testXRefSignatures(void* baseAddress, const char* string)
 {
-	XRefSignature signature(string);
+	XRefSignature signature{ string };
 	auto addr = signature.findNext<void*>(baseAddress);
 	assert(addr.has_value());
 

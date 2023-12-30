@@ -2,22 +2,31 @@
 
 #include <algorithm>
 #include <sstream>
+#include <cstring>
 
-SignatureScanner::StringSignature::StringSignature(const std::string& string)
-	: PatternSignature()
+SignatureScanner::PatternSignature::PatternSignature(std::vector<PatternSignature::Element> elements)
+	: elements(std::move(elements))
+{
+}
+
+SignatureScanner::StringSignature::StringSignature(const std::string& string, std::optional<char> wildcard)
+	: PatternSignature({})
 {
 	for (char c : string) {
-		elements.emplace_back(static_cast<std::byte>(c));
+		if(wildcard == c)
+			elements.emplace_back(std::nullopt);
+		else
+			elements.emplace_back(static_cast<std::byte>(c));
 	}
 }
 
-SignatureScanner::StringSignature::StringSignature(const char* string)
-	: StringSignature(std::string{ string })
+SignatureScanner::StringSignature::StringSignature(const char* string, std::optional<char> wildcard)
+	: StringSignature(std::string{ string }, wildcard)
 {
 }
 
 SignatureScanner::ByteSignature::ByteSignature(const std::string& string, const char wildcard)
-	: PatternSignature()
+	: PatternSignature({})
 {
 	std::stringstream iss{ string };
 	std::string word;
@@ -32,4 +41,17 @@ SignatureScanner::ByteSignature::ByteSignature(const std::string& string, const 
 SignatureScanner::ByteSignature::ByteSignature(const char* bytes, char wildcard)
 	: ByteSignature(std::string{ bytes }, wildcard)
 {
+}
+
+SignatureScanner::ByteSignature::ByteSignature(const char* bytes, const char* mask, char maskChar)
+	: PatternSignature({})
+{
+	std::size_t length = std::strlen(mask);
+
+	for(std::size_t i = 0; i < length; i++) {
+		if(mask[i] == maskChar)
+			elements.emplace_back(static_cast<std::byte>(bytes[i]));
+		else
+			elements.emplace_back(std::nullopt);
+	}
 }
