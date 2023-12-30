@@ -13,7 +13,9 @@ extern size_t sizeofByteSignature;
 extern size_t sizeofXRefSignature;
 // Note: when reusing allocated memory you still need to clean up the old memory
 void signaturescanner_constructStringSignature(void* signature, const char* string);
+void signaturescanner_constructStringSignature_wildcard(void* signature, const char* string, char wildcard);
 void signaturescanner_constructByteSignature(void* signature, const char* bytes, char wildcard);
+void signaturescanner_constructByteSignature_codeStyle(void* signature, const char* bytes, const char* mask, char maskChar);
 void signaturescanner_constructXRefSignature(void* signature, const void* address, bool relativeReferences, bool absoluteReferences);
 
 // Search
