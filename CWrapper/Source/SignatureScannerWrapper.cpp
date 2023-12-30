@@ -5,10 +5,6 @@ using namespace SignatureScanner;
 
 extern "C" {
 
-extern size_t sizeofStringSignature = sizeof(StringSignature);
-extern size_t sizeofByteSignature = sizeof(ByteSignature);
-extern size_t sizeofXRefSignature = sizeof(XRefSignature);
-
 void signaturescanner_constructStringSignature(void* signature, const char* string) {
 	new (signature) StringSignature { string };
 }
@@ -24,6 +20,33 @@ void signaturescanner_constructByteSignature_codeStyle(void* signature, const ch
 void signaturescanner_constructXRefSignature(void* signature, const void* address, bool relativeReferences, bool absoluteReferences) {
 	new (signature) XRefSignature{ address, relativeReferences, absoluteReferences };
 }
+
+struct signaturescanner_impl signature_scanner {
+	{
+		sizeof(StringSignature),
+		sizeof(ByteSignature),
+		sizeof(XRefSignature)
+	},
+	{
+		signaturescanner_constructStringSignature,
+			signaturescanner_constructStringSignature_wildcard,
+			signaturescanner_constructByteSignature,
+			signaturescanner_constructByteSignature_codeStyle,
+			signaturescanner_constructXRefSignature
+	},
+	{
+		signaturescanner_next,
+			signaturescanner_next_bounded,
+			signaturescanner_prev,
+			signaturescanner_prev_bounded,
+			signaturescanner_all
+	},
+	{
+		signaturescanner_pattern_doesMatch,
+			signaturescanner_xref_doesMatch
+	},
+		signaturescanner_cleanup
+};
 
 
 uintptr_t signaturescanner_next(const void* signature, uintptr_t begin) {

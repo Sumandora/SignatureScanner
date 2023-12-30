@@ -7,32 +7,38 @@
 extern "C" {
 #endif
 
-// New Signatures
-extern size_t sizeofStringSignature;
-extern size_t sizeofByteSignature;
-extern size_t sizeofXRefSignature;
-// Note: when reusing allocated memory you still need to clean up the old memory
-void signaturescanner_constructStringSignature(void* signature, const char* string);
-void signaturescanner_constructStringSignature_wildcard(void* signature, const char* string, char wildcard);
-void signaturescanner_constructByteSignature(void* signature, const char* bytes, char wildcard);
-void signaturescanner_constructByteSignature_codeStyle(void* signature, const char* bytes, const char* mask, char maskChar);
-void signaturescanner_constructXRefSignature(void* signature, const void* address, bool relativeReferences, bool absoluteReferences);
+extern struct signaturescanner_impl {
+	struct {
+		size_t string_signature;
+		size_t byte_signature;
+		size_t xref_signature;
+	} size_of;
 
-// Search
-uintptr_t signaturescanner_next(const void* signature, uintptr_t begin);
-uintptr_t signaturescanner_next_bounded(const void* signature, uintptr_t begin, uintptr_t end);
+	struct {
+		void(*string)(void* signature, const char* string);
+		void(*string_with_wildcard)(void* signature, const char* string, char wildcard);
+		void(*ida_style)(void* signature, const char* bytes, char wildcard);
+		void(*code_style)(void* signature, const char* bytes, const char* mask, char maskChar);
+		void(*xref)(void* signature, const void* address, bool relativeReferences, bool absoluteReferences);
+	} construct;
 
-uintptr_t signaturescanner_prev(const void* signature, uintptr_t begin);
-uintptr_t signaturescanner_prev_bounded(const void* signature, uintptr_t begin, uintptr_t end);
+	struct {
+		uintptr_t(*next)(const void* signature, uintptr_t begin);
+		uintptr_t(*next_bounded)(const void* signature, uintptr_t begin, uintptr_t end);
 
-void signaturescanner_all(const void* signature, uintptr_t* arr, size_t* count, uintptr_t begin, uintptr_t end);
+		uintptr_t(*prev)(const void* signature, uintptr_t begin);
+		uintptr_t(*prev_bounded)(const void* signature, uintptr_t begin, uintptr_t end);
 
-// Does Match
-bool signaturescanner_pattern_doesMatch(const void* signature, uintptr_t addr);
-bool signaturescanner_xref_doesMatch(const void* signature, uintptr_t addr, size_t space);
+		void(*all)(const void* signature, uintptr_t* arr, size_t* count, uintptr_t begin, uintptr_t end);
+	} search;
 
-// Tear-down
-void signaturescanner_cleanup(void* signature);
+	struct {
+		bool(*pattern)(const void* signature, uintptr_t addr);
+		bool(*xref)(const void* signature, uintptr_t addr, size_t space);
+	} does_match;
+
+	void(*cleanup)(void* signature);
+} signature_scanner;
 
 #ifdef __cplusplus
 }

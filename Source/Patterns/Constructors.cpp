@@ -20,11 +20,6 @@ SignatureScanner::StringSignature::StringSignature(const std::string& string, st
 	}
 }
 
-SignatureScanner::StringSignature::StringSignature(const char* string, std::optional<char> wildcard)
-	: StringSignature(std::string{ string }, wildcard)
-{
-}
-
 SignatureScanner::ByteSignature::ByteSignature(const std::string& string, const char wildcard)
 	: PatternSignature({})
 {
@@ -43,12 +38,10 @@ SignatureScanner::ByteSignature::ByteSignature(const char* bytes, char wildcard)
 {
 }
 
-SignatureScanner::ByteSignature::ByteSignature(const char* bytes, const char* mask, char maskChar)
+SignatureScanner::ByteSignature::ByteSignature(const char* bytes, std::string mask, char maskChar)
 	: PatternSignature({})
 {
-	std::size_t length = std::strlen(mask);
-
-	for(std::size_t i = 0; i < length; i++) {
+	for(std::size_t i = 0; i < mask.length(); i++) {
 		if(mask[i] == maskChar)
 			elements.emplace_back(static_cast<std::byte>(bytes[i]));
 		else

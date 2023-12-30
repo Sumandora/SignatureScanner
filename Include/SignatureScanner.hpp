@@ -79,7 +79,6 @@ namespace SignatureScanner {
 	class StringSignature : public PatternSignature {
 	public:
 		explicit StringSignature(const std::string& string, std::optional<char> wildcard = std::nullopt);
-		explicit StringSignature(const char* string, std::optional<char> wildcard = std::nullopt);
 	};
 
 	class ByteSignature : public PatternSignature {
@@ -87,7 +86,7 @@ namespace SignatureScanner {
 		explicit ByteSignature(const std::string& bytes, char wildcard = '?');
 		explicit ByteSignature(const char* bytes, char wildcard = '?');
 
-		ByteSignature(const char* bytes, const char* mask, char maskChar = 'x' /*defines the char which enables a byte, not the one which disables one*/);
+		ByteSignature(const char* bytes, std::string mask, char maskChar = 'x' /*defines the char which enables a byte, not the one which disables one*/);
 	};
 
 	class XRefSignature : public Signature {

@@ -31,7 +31,7 @@ void testByteSignatures()
 
 	assert(offset == 41);
 
-	signature = ByteSignature{ "1e bb 5a f2 65 e5 53 85" };
+	signature = ByteSignature{ "\x1e\xbb\x5a\xf2\x65\xe5\x53\x85", "xxxxxxxx" };
 
 	hit = signature.findPrev<unsigned char*, void*, void*>(hit.value(), byte_array_hex);
 	assert(hit.has_value());
