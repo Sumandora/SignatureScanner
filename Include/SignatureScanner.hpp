@@ -51,17 +51,20 @@ namespace SignatureScanner {
 	};
 
 	class PatternSignature : public Signature {
-		using Element = std::optional<std::byte>;
-
 	private:
 		[[nodiscard]] std::optional<std::uintptr_t> prev(std::uintptr_t begin, std::optional<std::uintptr_t> end) const override;
 		[[nodiscard]] std::optional<std::uintptr_t> next(std::uintptr_t begin, std::optional<std::uintptr_t> end) const override;
 		[[nodiscard]] std::vector<std::uintptr_t> all(std::uintptr_t begin, std::uintptr_t end) const override;
 
+	public:
+		using Element = std::optional<std::byte>;
+
 	protected:
 		std::vector<Element> elements;
 
 	public:
+		explicit PatternSignature(std::vector<PatternSignature::Element> elements);
+
 		[[nodiscard]] std::size_t length() const;
 
 		[[nodiscard]] bool doesMatch(std::uintptr_t addr) const;
@@ -75,14 +78,16 @@ namespace SignatureScanner {
 
 	class StringSignature : public PatternSignature {
 	public:
-		explicit StringSignature(const std::string& string);
-		explicit StringSignature(const char* string);
+		explicit StringSignature(const std::string& string, std::optional<char> wildcard = std::nullopt);
+		explicit StringSignature(const char* string, std::optional<char> wildcard = std::nullopt);
 	};
 
 	class ByteSignature : public PatternSignature {
 	public:
 		explicit ByteSignature(const std::string& bytes, char wildcard = '?');
 		explicit ByteSignature(const char* bytes, char wildcard = '?');
+
+		ByteSignature(const char* bytes, const char* mask, char maskChar = 'x' /*defines the char which enables a byte, not the one which disables one*/);
 	};
 
 	class XRefSignature : public Signature {
