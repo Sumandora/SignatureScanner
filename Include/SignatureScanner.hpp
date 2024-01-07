@@ -38,7 +38,7 @@ namespace SignatureScanner {
 		[[nodiscard]] inline std::vector<R> findAll(T begin, T2 end) const
 		{
 			std::vector<std::uintptr_t> vector = all(std::uintptr_t(begin), std::uintptr_t(end));
-			if constexpr (std::is_convertible_v<std::vector<std::uintptr_t>, std::vector<R>>)
+			if constexpr (std::is_convertible_v<decltype(vector), std::vector<R>>)
 				return vector;
 			else { // when you are using this path then you are enduring a performance hit because the vector has to be copied first
 				std::vector<R> newVector{};
@@ -79,15 +79,15 @@ namespace SignatureScanner {
 	class StringSignature : public PatternSignature {
 	public:
 		explicit StringSignature(const std::string& string, std::optional<char> wildcard = std::nullopt);
-		explicit StringSignature(const char* string, std::optional<char> wildcard = std::nullopt);
 	};
 
 	class ByteSignature : public PatternSignature {
 	public:
+		// IDA style
 		explicit ByteSignature(const std::string& bytes, char wildcard = '?');
-		explicit ByteSignature(const char* bytes, char wildcard = '?');
 
-		ByteSignature(const char* bytes, const char* mask, char maskChar = 'x' /*defines the char which enables a byte, not the one which disables one*/);
+		// Code style
+		ByteSignature(const char* bytes, const std::string& mask, char maskChar = 'x' /*defines the char which enables a byte, not the one which disables one*/);
 	};
 
 	class XRefSignature : public Signature {
