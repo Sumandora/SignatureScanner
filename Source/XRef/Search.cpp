@@ -11,7 +11,7 @@ bool SignatureScanner::XRefSignature::doesMatch(std::uintptr_t addr, const std::
 		return true;
 	}
 
-	if (relativeReferences && address - addr < std::numeric_limits<RelAddrType>::max() && space > sizeof(RelAddrType)) {
+	if (relativeReferences && std::max(address, addr) - std::min(address, addr) < std::numeric_limits<RelAddrType>::max() && space > sizeof(RelAddrType)) {
 		if (addr + sizeof(RelAddrType) + *reinterpret_cast<RelAddrType*>(addr) == address) {
 			return true;
 		}
