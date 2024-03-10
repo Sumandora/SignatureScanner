@@ -2,15 +2,18 @@
 #define SIGNATURESCANNER_H
 
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // New Signatures
-extern size_t sigscan_sizeof_string;
-extern size_t sigscan_sizeof_byte;
-extern size_t sigscan_sizeof_xref;
+extern const size_t sigscan_sizeof_string;
+extern const size_t sigscan_sizeof_byte;
+extern const size_t sigscan_sizeof_xref;
+
 // Note: when reusing allocated memory you still need to clean up the old memory
 void sigscan_construct_string(void* signature, const char* string);
 void sigscan_construct_string_with_wildcard(void* signature, const char* string, char wildcard);

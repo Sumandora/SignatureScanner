@@ -5,9 +5,9 @@ using namespace SignatureScanner;
 
 extern "C" {
 
-size_t sigscan_sizeof_string = sizeof(StringSignature);
-size_t sigscan_sizeof_byte = sizeof(ByteSignature);
-size_t sigscan_sizeof_xref = sizeof(XRefSignature);
+const size_t sigscan_sizeof_string = sizeof(StringSignature);
+const size_t sigscan_sizeof_byte = sizeof(ByteSignature);
+const size_t sigscan_sizeof_xref = sizeof(XRefSignature);
 
 void sigscan_construct_string(void* signature, const char* string) {
 	new (signature) StringSignature { string };
