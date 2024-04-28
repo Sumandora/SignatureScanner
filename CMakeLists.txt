@@ -4,10 +4,8 @@ include_guard()
 
 project(SignatureScanner)
 
-add_library(SignatureScanner STATIC "${PROJECT_SOURCE_DIR}/Source/Patterns/Constructors.cpp" "${PROJECT_SOURCE_DIR}/Source/Patterns/Search.cpp" "${PROJECT_SOURCE_DIR}/Source/XRef/Constructors.cpp" "${PROJECT_SOURCE_DIR}/Source/XRef/Search.cpp")
-target_include_directories(SignatureScanner PUBLIC "${PROJECT_SOURCE_DIR}/Include")
-target_compile_options(SignatureScanner PRIVATE "-Ofast")
-target_compile_features(SignatureScanner PRIVATE cxx_std_17)
+add_library(SignatureScanner INTERFACE)
+target_include_directories(SignatureScanner INTERFACE "${PROJECT_SOURCE_DIR}/Include")
 
 if(PROJECT_IS_TOP_LEVEL)
 	enable_testing()

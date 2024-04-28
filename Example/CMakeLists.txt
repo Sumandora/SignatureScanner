@@ -1,20 +1,15 @@
-add_executable(ExampleCXX "CXX/Main.cpp")
-target_link_libraries(ExampleCXX PRIVATE SignatureScanner)
-target_link_options(ExampleCXX PRIVATE "-rdynamic") # Embed function names into the example binary
+include("FetchContent")
+FetchContent_Declare(googletest
+        GIT_REPOSITORY https://github.com/google/googletest
+        GIT_PROGRESS TRUE
+        GIT_TAG v1.14.0
+)
+FetchContent_MakeAvailable(googletest)
 
-# Include C Support
-add_subdirectory("../CWrapper" "CWrapper")
+add_executable(SignatureScannerTests "Source/Main.cpp")
+target_link_libraries(SignatureScannerTests PRIVATE SignatureScanner GTest::gtest_main)
+target_link_options(SignatureScannerTests PRIVATE "-rdynamic") # Embed function names into the example binary
+target_compile_features(SignatureScannerTests PRIVATE cxx_std_23)
 
-add_executable(ExampleCHeap "C/Heap.c")
-target_link_libraries(ExampleCHeap PRIVATE SignatureScannerCWrapper)
-target_link_options(ExampleCHeap PRIVATE "-rdynamic") # Embed function names into the example binary
-target_compile_options(ExampleCHeap PRIVATE "-Wno-int-conversion" "-Wno-pointer-integer-compare")
-
-add_executable(ExampleCStack "C/Stack.c")
-target_link_libraries(ExampleCStack PRIVATE SignatureScannerCWrapper)
-target_link_options(ExampleCStack PRIVATE "-rdynamic") # Embed function names into the example binary
-target_compile_options(ExampleCStack PRIVATE "-Wno-int-conversion" "-Wno-pointer-integer-compare")
-
-add_test(NAME TestExampleCXX COMMAND $<TARGET_FILE:ExampleCXX>)
-add_test(NAME TestExampleCHeap COMMAND $<TARGET_FILE:ExampleCHeap>)
-add_test(NAME TestExampleCStack COMMAND $<TARGET_FILE:ExampleCStack>)
+include("GoogleTest")
+gtest_discover_tests(SignatureScannerTests)
