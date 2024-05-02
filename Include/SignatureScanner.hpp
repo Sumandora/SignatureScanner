@@ -234,12 +234,13 @@ namespace SignatureScanner {
 		std::array<detail::PatternElement, N> elements;
 
 	public:
+		static constexpr std::size_t Length = N;
 		constexpr PatternSignature(std::array<detail::PatternElement, N>&& elements)
 			: elements(std::move(elements))
 		{
 		}
 
-		[[nodiscard]] constexpr const std::vector<detail::PatternElement>& getElements() const { return elements; }
+		[[nodiscard]] constexpr const std::array<detail::PatternElement, N>& getElements() const { return elements; }
 
 		template <typename Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr auto next(const Iter& begin, const Sent& end) const
