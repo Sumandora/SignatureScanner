@@ -211,14 +211,32 @@ namespace SignatureScanner {
 		}
 	}
 
-	template <typename Derived>
 	class Signature {
 	public:
-		template <typename Iter, typename Sent, typename Inserter>
-		[[nodiscard]] constexpr auto all(Iter begin, const Sent& end, Inserter inserter) const
+
+		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr auto next(this Self&& self, const Iter& begin, const Sent& end)
+		{
+			return self.next(begin, end);
+		}
+
+		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr auto prev(this Self&& self, const Iter& begin, const Sent& end)
+		{
+			return self.prev(begin, end);
+		}
+
+		template <typename Self, typename Iter>
+		[[nodiscard]] constexpr bool doesMatch(this Self&& self, const Iter& iter)
+		{
+			return self.doesMatch(iter);
+		}
+
+		template <typename Self, typename Iter, typename Sent, typename Inserter>
+		[[nodiscard]] constexpr auto all(this Self&& self, Iter begin, const Sent& end, Inserter inserter)
 		{
 			while (true) {
-				auto it = static_cast<const Derived*>(this)->next(begin, end);
+				auto it = self.next(begin, end);
 				if (it == end)
 					break;
 				*inserter = it;
@@ -229,7 +247,7 @@ namespace SignatureScanner {
 	};
 
 	template <std::size_t N>
-	class PatternSignature : public Signature<PatternSignature<N>> {
+	class PatternSignature : public Signature {
 	private:
 		std::array<detail::PatternElement, N> elements;
 
@@ -255,9 +273,9 @@ namespace SignatureScanner {
 		}
 
 		template <typename Iter>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& addr) const
+		[[nodiscard]] constexpr bool doesMatch(const Iter& iter) const
 		{
-			return std::equal(elements.cbegin(), addr.cbegin(), elements.cend(), std::next(addr.cbegin(), elements.length()), detail::patternCompare<decltype(*std::declval<Iter>())>);
+			return std::equal(elements.cbegin(), iter.cbegin(), elements.cend(), std::next(iter.cbegin(), elements.length()), detail::patternCompare<decltype(*std::declval<Iter>())>);
 		}
 	};
 
@@ -307,7 +325,7 @@ namespace SignatureScanner {
 	}
 
 	template <bool Relative = true, bool Absolute = true, std::endian Endianness = std::endian::native>
-	class XRefSignature : public Signature<XRefSignature<Relative, Absolute, Endianness>> {
+	class XRefSignature : public Signature {
 		static_assert(Relative || Absolute);
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
@@ -444,12 +462,12 @@ namespace SignatureScanner {
 		}
 
 		template <typename Iter, std::sentinel_for<Iter> Sent = std::unreachable_sentinel_t>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& addr, const Sent& end = std::unreachable_sentinel_t{}) const
+		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
 		{
 			detail::StaticQueue<MAX_SLIDE_WINDOW_SIZE> number;
 			std::size_t i = 0;
 			std::uintptr_t location;
-			for (auto it = addr; it != end; it++) {
+			for (auto it = iter; it != end; it++) {
 				if constexpr (Endianness == std::endian::little)
 					number.push_back(*it);
 				else
@@ -459,7 +477,7 @@ namespace SignatureScanner {
 				location = detail::convertBytes<std::uintptr_t>(number, Endianness);
 
 				if constexpr (Relative) {
-					if (i >= REL_OFFSET_SIZE && doesRelativeMatch(static_cast<RelAddrType>(number), location)) {
+					if (i >= REL_OFFSET_SIZE && doesRelativeMatch(static_cast<RelAddrType>(location), reinterpret_cast<std::uintptr_t>(&*iter))) {
 						return true;
 					}
 				}
