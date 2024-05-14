@@ -149,9 +149,11 @@ namespace SignatureScanner {
 		const char DEFAULT_DELIMITER = ' ';
 		const char DEFAULT_WILDCARD = '?';
 
-		template <detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD, std::size_t Length = ida_detail::countWords<String>(Delimiter)>
+		template <detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
 		consteval auto build()
 		{
+			constexpr std::size_t Length = ida_detail::countWords<String>(Delimiter);
+
 			std::array<detail::PatternElement, Length> signature;
 
 			ida_detail::buildSignature(String, detail::ArrayInserter(signature), Delimiter, Wildcard);
