@@ -1,4 +1,5 @@
-#include "SignatureScanner.hpp"
+#include "SignatureScanner/PatternSignature.hpp"
+#include "SignatureScanner/XRefSignature.hpp"
 
 #include <span>
 #include <cstring>

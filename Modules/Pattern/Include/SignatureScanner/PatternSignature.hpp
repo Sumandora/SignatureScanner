@@ -1,13 +1,11 @@
-#ifndef SIGNATURESCANNER_HPP
-#define SIGNATURESCANNER_HPP
+#ifndef SIGNATURESCANNER_PATTERNSIGNATURE_HPP
+#define SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 
-#include <algorithm>
-#include <array>
-#include <cstdint>
-#include <limits>
+#include "SignatureScanner/SignatureScanner.hpp"
+
 #include <optional>
-#include <string>
-#include <variant>
+#include <algorithm>
+#include <cstdint>
 #include <vector>
 
 namespace SignatureScanner {
@@ -208,40 +206,6 @@ namespace SignatureScanner {
 		}
 	}
 
-	class Signature {
-	public:
-		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto next(this Self&& self, const Iter& begin, const Sent& end)
-		{
-			return self.next(begin, end);
-		}
-
-		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto prev(this Self&& self, const Iter& begin, const Sent& end)
-		{
-			return self.prev(begin, end);
-		}
-
-		template <typename Self, typename Iter>
-		[[nodiscard]] constexpr bool doesMatch(this Self&& self, const Iter& iter)
-		{
-			return self.doesMatch(iter);
-		}
-
-		template <typename Self, typename Iter, typename Sent, typename Inserter>
-		[[nodiscard]] constexpr auto all(this Self&& self, Iter begin, const Sent& end, Inserter inserter)
-		{
-			while (true) {
-				auto it = self.next(begin, end);
-				if (it == end)
-					break;
-				*inserter = it;
-				begin = it;
-				begin++;
-			}
-		}
-	};
-
 	template <std::size_t N>
 	class PatternSignature : public Signature {
 	private:
@@ -272,124 +236,6 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter) const
 		{
 			return std::equal(elements.cbegin(), iter.cbegin(), elements.cend(), std::next(iter.cbegin(), elements.length()), detail::patternCompare<decltype(*std::declval<Iter>())>);
-		}
-	};
-
-	namespace detail {
-		template <typename T, std::endian Endianness, typename Iter, std::sentinel_for<Iter> Sent>
-		constexpr std::optional<T> convertBytes(Iter iter, const Sent& end)
-		{
-			std::array<std::byte, sizeof(T)> arr;
-			for (std::size_t i = 0; i < sizeof(T); i++) {
-				if (iter == end)
-					return std::nullopt;
-				arr[i] = *iter;
-				iter++;
-			}
-			T num = std::bit_cast<T>(arr);
-			if constexpr (Endianness != std::endian::native)
-				num = std::byteswap(num);
-			return num;
-		}
-	}
-
-	template <bool Relative = true, bool Absolute = true, std::endian Endianness = std::endian::native>
-	class XRefSignature : public Signature {
-		static_assert(Relative || Absolute);
-
-		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
-		const std::uintptr_t address;
-		[[no_unique_address]] const std::conditional_t<Relative, std::size_t, std::monostate> instructionLength;
-
-	public:
-		explicit constexpr XRefSignature(std::uintptr_t address, std::size_t instructionLength)
-			requires Relative
-			: address(address)
-			, instructionLength(instructionLength)
-		{
-		}
-
-		explicit constexpr XRefSignature(std::uintptr_t address)
-			: address(address)
-			, instructionLength([] {
-				if constexpr (Relative)
-					return sizeof(RelAddrType);
-				else
-					return decltype(instructionLength){};
-			}())
-		{
-		}
-
-	public:
-		template <typename Iter, typename Sent>
-		[[nodiscard]] constexpr auto next(Iter it, const Sent& end) const
-		{
-			for (; it != end; it++)
-				if (doesMatch(it, end))
-					return it;
-
-			return it;
-		}
-
-		template <typename Iter, typename Sent>
-		[[nodiscard]] constexpr auto prev(Iter it, const Sent& end) const
-		{
-			for (; it != end; it++) {
-				// Regarding the "- 1":
-				// For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1)
-				// is always true (as long as r is dereferenceable); thus a reverse iterator constructed from
-				// a one-past-the-end iterator dereferences to the last element in a sequence.
-				// https://en.cppreference.com/w/cpp/iterator/reverse_iterator
-				if (doesMatch(std::make_reverse_iterator(it) - 1, std::make_reverse_iterator(end) - 1))
-					return it;
-			}
-
-			return it;
-		}
-
-		template <typename Iter, std::sentinel_for<Iter> Sent = std::unreachable_sentinel_t>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
-		{
-			if constexpr (Absolute)
-				if (auto bytes = detail::convertBytes<std::uintptr_t, Endianness>(iter, end); bytes.has_value())
-					if (doesAbsoluteMatch(bytes.value()))
-						return true;
-
-			if constexpr (Relative)
-				if (auto bytes = detail::convertBytes<RelAddrType, Endianness>(iter, end); bytes.has_value())
-					if (doesRelativeMatch(bytes.value(), reinterpret_cast<std::uintptr_t>(&*iter)))
-						return true;
-
-			return false;
-		}
-
-		[[nodiscard]] constexpr bool doesMatch(std::uintptr_t number, std::conditional_t<Relative, std::uintptr_t, std::monostate> location = {}) const
-		{
-			if constexpr (Absolute)
-				if (doesAbsoluteMatch(number))
-					return true;
-
-			if constexpr (Relative)
-				if (doesRelativeMatch(static_cast<RelAddrType>(number), location))
-					return true;
-
-			return false;
-		}
-
-		[[nodiscard]] constexpr bool doesAbsoluteMatch(std::uintptr_t number) const
-			requires Absolute
-		{
-			return number == address;
-		}
-
-		[[nodiscard]] constexpr bool doesRelativeMatch(RelAddrType offset, std::uintptr_t location) const
-			requires Relative
-		{
-			// This is a special which I encountered if the address has 0x00 bytes before it, thus it becomes location + instructionLength + 0.
-			// I can't imagine a case in which this is desired.
-			if (offset == 0)
-				return false;
-			return location + instructionLength + offset == address;
 		}
 	};
 }
