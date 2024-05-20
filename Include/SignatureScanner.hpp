@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <string>
 #include <variant>
@@ -63,7 +64,7 @@ namespace SignatureScanner {
 			constexpr TemplateString(const char (&str)[N + 1])
 				: std::array<char, N>()
 			{
-				std::copy(std::begin(str), std::end(str) - 1, ArrayInserter<char, N>(*this));
+				std::copy(std::begin(str), std::end(str) - 1, ArrayInserter(*this));
 			}
 #pragma clang diagnostic pop
 		};
@@ -127,7 +128,7 @@ namespace SignatureScanner {
 				std::string word;
 
 				std::size_t idx = 0;
-				for (char c : range) {
+				for (char c : range)
 					if (c == Delimiter) {
 						if (word.empty())
 							continue;
@@ -138,11 +139,9 @@ namespace SignatureScanner {
 						word = "";
 					} else
 						word += c;
-				}
 
-				if (!word.empty()) {
+				if (!word.empty())
 					inserter = buildWord(word, Wildcard);
-				}
 			}
 		}
 
@@ -179,16 +178,14 @@ namespace SignatureScanner {
 		{
 			std::array<detail::PatternElement, IncludeTerminator ? String.size() + 1 : String.size()> signature;
 
-			for (size_t i = 0; i < String.size(); i++) {
+			for (size_t i = 0; i < String.size(); i++)
 				if (String[i] == Wildcard)
 					signature[i] = std::nullopt;
 				else
 					signature[i] = static_cast<detail::InnerPatternElement>(String[i]);
-			}
 
-			if constexpr (IncludeTerminator) {
+			if constexpr (IncludeTerminator)
 				signature[signature.size() - 1] = (static_cast<detail::InnerPatternElement>('\0'));
-			}
 
 			return signature;
 		}
@@ -198,16 +195,14 @@ namespace SignatureScanner {
 			std::vector<detail::PatternElement> signature;
 			signature.reserve(string.size() + (includeTerminator ? 1 : 0));
 
-			for (char c : string) {
+			for (char c : string)
 				if (c == wildcard)
 					signature.emplace_back(std::nullopt);
 				else
 					signature.emplace_back(static_cast<detail::InnerPatternElement>(c));
-			}
 
-			if (includeTerminator) {
+			if (includeTerminator)
 				signature.emplace_back(static_cast<detail::InnerPatternElement>('\0'));
-			}
 
 			return signature;
 		}
@@ -215,7 +210,6 @@ namespace SignatureScanner {
 
 	class Signature {
 	public:
-
 		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr auto next(this Self&& self, const Iter& begin, const Sent& end)
 		{
@@ -282,45 +276,18 @@ namespace SignatureScanner {
 	};
 
 	namespace detail {
-		template <std::size_t N>
-		struct StaticQueue : std::array<std::byte, N> {
-			using std::array<std::byte, N>::array;
-
-			constexpr StaticQueue(std::array<std::byte, N> arr)
-				: std::array<std::byte, N>(arr)
-			{
-			}
-
-			constexpr void push_front(std::byte b)
-			{
-				for (std::size_t i = N - 1; i > 0; i--)
-					(*this)[i] = (*this)[i - 1];
-				(*this)[0] = b;
-			}
-
-			constexpr void push_back(std::byte b)
-			{
-				for (std::size_t i = 1; i < N; i++)
-					(*this)[i - 1] = (*this)[i];
-				(*this)[N - 1] = b;
-			}
-
-			template <std::size_t NewN>
-			constexpr std::array<std::byte, NewN> sliced(std::size_t offset = 0)
-				requires(NewN <= N)
-			{
-				std::array<std::byte, NewN> arr;
-				for (std::size_t i = 0; i < NewN; i++)
-					arr[i] = (*this)[offset + i];
-				return arr;
-			}
-		};
-
-		template <typename T, std::size_t N>
-		constexpr T convertBytes(const std::array<std::byte, N> array, std::endian endianness)
+		template <typename T, std::endian Endianness, typename Iter, std::sentinel_for<Iter> Sent>
+		constexpr std::optional<T> convertBytes(Iter iter, const Sent& end)
 		{
-			T num = std::bit_cast<T>(array);
-			if (endianness != std::endian::native)
+			std::array<std::byte, sizeof(T)> arr;
+			for (std::size_t i = 0; i < sizeof(T); i++) {
+				if (iter == end)
+					return std::nullopt;
+				arr[i] = *iter;
+				iter++;
+			}
+			T num = std::bit_cast<T>(arr);
+			if constexpr (Endianness != std::endian::native)
 				num = std::byteswap(num);
 			return num;
 		}
@@ -333,8 +300,6 @@ namespace SignatureScanner {
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
 		const std::uintptr_t address;
 		[[no_unique_address]] const std::conditional_t<Relative, std::size_t, std::monostate> instructionLength;
-		static constexpr std::size_t MAX_SLIDE_WINDOW_SIZE = Relative ? std::max(sizeof(std::uintptr_t), sizeof(RelAddrType)) : sizeof(std::uintptr_t);
-		static constexpr std::size_t REL_OFFSET_SIZE = sizeof(RelAddrType);
 
 	public:
 		explicit constexpr XRefSignature(std::uintptr_t address, std::size_t instructionLength)
@@ -355,161 +320,59 @@ namespace SignatureScanner {
 		{
 		}
 
-	private:
-		template <typename Iter, std::sentinel_for<Iter> Sent, bool Backwards>
-		constexpr auto twoPointer(const Iter& begin, const Sent& end) const
-		{
-			auto range = std::ranges::subrange{ begin, end };
-
-			detail::StaticQueue<MAX_SLIDE_WINDOW_SIZE> number{};
-
-			auto p1 = begin;
-			auto p2 = begin;
-
-			std::size_t i = 0;
-			std::size_t size = std::min(MAX_SLIDE_WINDOW_SIZE, static_cast<decltype(MAX_SLIDE_WINDOW_SIZE)>(std::distance(begin, end)));
-			while (true) {
-				if constexpr (Backwards) {
-					if constexpr (Relative) {
-						if constexpr (Endianness == std::endian::little) {
-							number.push_front(*p2);
-						} else {
-							number.push_back(*p2);
-						}
-
-						if (i >= REL_OFFSET_SIZE - 1) {
-							auto offset = detail::convertBytes<RelAddrType>(number.template sliced<REL_OFFSET_SIZE>(), Endianness);
-							if (doesRelativeMatch(offset, reinterpret_cast<std::uintptr_t>(&*p2))) {
-								return p2;
-							}
-						}
-					} else // faster
-						number[size - 1 - i] = *p2;
-				} else {
-					number[i] = *p2;
-				}
-
-				i++;
-
-				if (i >= size)
-					break;
-
-				p2++;
-			}
-
-			if (size == MAX_SLIDE_WINDOW_SIZE)
-				while (true) {
-					auto offset = detail::convertBytes<std::uintptr_t>(number, Endianness);
-
-					if constexpr (Absolute) {
-						if (doesAbsoluteMatch(offset)) {
-							if constexpr (Backwards) {
-								return p2;
-							} else {
-								return p1;
-							}
-						}
-					}
-
-					if constexpr (Relative) {
-						if constexpr (Backwards) {
-							if (doesRelativeMatch(static_cast<RelAddrType>(offset), reinterpret_cast<std::uintptr_t>(&*p2)))
-								return p2;
-						} else {
-							if (doesRelativeMatch(static_cast<RelAddrType>(offset), reinterpret_cast<std::uintptr_t>(&*p1)))
-								return p1;
-						}
-					}
-
-					p2++;
-
-					if (p2 == end)
-						break;
-
-					p1++;
-
-					if constexpr (Backwards == (Endianness == std::endian::little))
-						number.push_front(*p2);
-					else
-						number.push_back(*p2);
-				}
-
-			if constexpr (!Backwards && Relative && REL_OFFSET_SIZE < MAX_SLIDE_WINDOW_SIZE) {
-				i = 0;
-				while (i <= size - REL_OFFSET_SIZE) {
-					auto offset = detail::convertBytes<RelAddrType>(number.template sliced<REL_OFFSET_SIZE>(i), Endianness);
-
-					if (doesRelativeMatch(offset, reinterpret_cast<std::uintptr_t>(&*p1)))
-						return p1;
-
-					p1++;
-					i++;
-				}
-			}
-
-			return end;
-		}
-
 	public:
 		template <typename Iter, typename Sent>
-		[[nodiscard]] constexpr auto next(const Iter& begin, const Sent& end) const
+		[[nodiscard]] constexpr auto next(Iter it, const Sent& end) const
 		{
-			return twoPointer<Iter, Sent, false>(begin, end);
+			for (; it != end; it++)
+				if (doesMatch(it, end))
+					return it;
+
+			return it;
 		}
 
 		template <typename Iter, typename Sent>
-		[[nodiscard]] constexpr auto prev(const Iter& begin, const Sent& end) const
+		[[nodiscard]] constexpr auto prev(Iter it, const Sent& end) const
 		{
-			return twoPointer<Iter, Sent, true>(begin, end);
+			for (; it != end; it++) {
+				// Regarding the "- 1":
+				// For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1)
+				// is always true (as long as r is dereferenceable); thus a reverse iterator constructed from
+				// a one-past-the-end iterator dereferences to the last element in a sequence.
+				// https://en.cppreference.com/w/cpp/iterator/reverse_iterator
+				if (doesMatch(std::make_reverse_iterator(it) - 1, std::make_reverse_iterator(end) - 1))
+					return it;
+			}
+
+			return it;
 		}
 
 		template <typename Iter, std::sentinel_for<Iter> Sent = std::unreachable_sentinel_t>
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
 		{
-			detail::StaticQueue<MAX_SLIDE_WINDOW_SIZE> number;
-			std::size_t i = 0;
-			std::uintptr_t location;
-			for (auto it = iter; it != end; it++) {
-				if constexpr (Endianness == std::endian::little)
-					number.push_back(*it);
-				else
-					number.push_front(*it);
-				i++;
-
-				location = detail::convertBytes<std::uintptr_t>(number, Endianness);
-
-				if constexpr (Relative) {
-					if (i >= REL_OFFSET_SIZE && doesRelativeMatch(static_cast<RelAddrType>(location), reinterpret_cast<std::uintptr_t>(&*iter))) {
+			if constexpr (Absolute)
+				if (auto bytes = detail::convertBytes<std::uintptr_t, Endianness>(iter, end); bytes.has_value())
+					if (doesAbsoluteMatch(bytes.value()))
 						return true;
-					}
-				}
 
-				if (i >= MAX_SLIDE_WINDOW_SIZE)
-					break;
-			}
-
-			if constexpr (Absolute) {
-				if (i >= MAX_SLIDE_WINDOW_SIZE && doesAbsoluteMatch(location)) {
-					return true;
-				}
-			}
+			if constexpr (Relative)
+				if (auto bytes = detail::convertBytes<RelAddrType, Endianness>(iter, end); bytes.has_value())
+					if (doesRelativeMatch(bytes.value(), reinterpret_cast<std::uintptr_t>(&*iter)))
+						return true;
 
 			return false;
 		}
 
 		[[nodiscard]] constexpr bool doesMatch(std::uintptr_t number, std::conditional_t<Relative, std::uintptr_t, std::monostate> location = {}) const
 		{
-			if constexpr (Absolute) {
-				if (doesAbsoluteMatch(number)) {
+			if constexpr (Absolute)
+				if (doesAbsoluteMatch(number))
 					return true;
-				}
-			}
 
-			if constexpr (Relative) {
-				if (doesRelativeMatch(static_cast<RelAddrType>(number), location)) {
+			if constexpr (Relative)
+				if (doesRelativeMatch(static_cast<RelAddrType>(number), location))
 					return true;
-				}
-			}
+
 			return false;
 		}
 
