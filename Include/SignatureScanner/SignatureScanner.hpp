@@ -18,10 +18,10 @@ namespace SignatureScanner {
 			return self.prev(begin, end);
 		}
 
-		template <typename Self, typename Iter>
-		[[nodiscard]] constexpr bool doesMatch(this Self&& self, const Iter& iter)
+		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr bool doesMatch(this Self&& self, const Iter& iter, const Sent& end = std::unreachable_sentinel_t{})
 		{
-			return self.doesMatch(iter);
+			return self.doesMatch(iter, end);
 		}
 
 		template <typename Self, typename Iter, typename Sent, typename Inserter>

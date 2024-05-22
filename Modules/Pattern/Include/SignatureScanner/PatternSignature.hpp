@@ -232,10 +232,18 @@ namespace SignatureScanner {
 			return std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
 		}
 
-		template <typename Iter>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& iter) const
+		template <typename Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
 		{
-			return std::equal(elements.cbegin(), iter.cbegin(), elements.cend(), std::next(iter.cbegin(), elements.length()), detail::patternCompare<decltype(*std::declval<Iter>())>);
+			auto iterEnd = iter;
+			if(iterEnd == end)
+				return false;
+			for(std::size_t i = 0; i < elements.size(); i++) {
+				iterEnd++;
+				if(iterEnd == end)
+					return false;
+			}
+			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<decltype(*iter)>);
 		}
 	};
 }
