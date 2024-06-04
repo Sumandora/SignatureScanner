@@ -1,9 +1,9 @@
 #include "SignatureScanner/PatternSignature.hpp"
 #include "SignatureScanner/XRefSignature.hpp"
 
-#include <span>
 #include <cstring>
 #include <gtest/gtest.h>
+#include <span>
 
 using namespace SignatureScanner;
 
@@ -21,7 +21,8 @@ static std::uint8_t bytes[]{
 };
 std::span<std::byte> bytesSpan{ reinterpret_cast<std::byte*>(bytes), sizeof(bytes) };
 
-TEST(BytePattern, Forwards) {
+TEST(BytePattern, Forwards)
+{
 	PatternSignature signature = IDA::build<"e4">();
 	auto hit = signature.next(bytesSpan.begin(), bytesSpan.end());
 
@@ -30,7 +31,8 @@ TEST(BytePattern, Forwards) {
 	EXPECT_EQ(offset, 42);
 }
 
-TEST(BytePattern, Backwards) {
+TEST(BytePattern, Backwards)
+{
 	PatternSignature signature = IDA::build<"e4">();
 	auto hit = signature.prev(bytesSpan.rbegin(), bytesSpan.rend());
 
@@ -39,7 +41,8 @@ TEST(BytePattern, Backwards) {
 	EXPECT_EQ(offset, 26);
 }
 
-TEST(BytePattern, All) {
+TEST(BytePattern, All)
+{
 	PatternSignature signature = IDA::build<"a9">();
 	std::vector<decltype(bytesSpan)::iterator> hits;
 	signature.all(bytesSpan.begin(), bytesSpan.end(), std::back_inserter(hits));
@@ -53,7 +56,8 @@ TEST(BytePattern, All) {
 std::string string = "The Answer to the Great Question Of Life, the Universe and Everything Is Forty-two";
 std::span<std::byte> stringSpan{ reinterpret_cast<std::byte*>(string.data()), string.size() };
 
-TEST(StringPattern, Forwards) {
+TEST(StringPattern, Forwards)
+{
 	PatternSignature signature = String::build<"Forty-two", false>();
 	auto hit = signature.next(stringSpan.begin(), stringSpan.end());
 
@@ -62,7 +66,8 @@ TEST(StringPattern, Forwards) {
 	EXPECT_EQ(offset, 73);
 }
 
-TEST(StringPattern, Backwards) {
+TEST(StringPattern, Backwards)
+{
 	PatternSignature signature = String::build<"Forty-two", false>();
 	auto hit = signature.prev(stringSpan.rbegin(), stringSpan.rend());
 
@@ -71,7 +76,8 @@ TEST(StringPattern, Backwards) {
 	EXPECT_EQ(offset, 0);
 }
 
-TEST(StringPattern, All) {
+TEST(StringPattern, All)
+{
 	PatternSignature signature = String::build<" ?? ", false>();
 	std::vector<decltype(stringSpan)::iterator> hits;
 	signature.all(stringSpan.begin(), stringSpan.end(), std::back_inserter(hits));
@@ -85,25 +91,61 @@ TEST(StringPattern, All) {
 std::uintptr_t target = 0x13371337;
 
 std::uint8_t absoluteXRef[]{
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
 
-	0x00, 0x00, 0x00, 0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
 #ifdef __x86_64
-	0x00, 0x00, 0x00, 0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
 #endif
 
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
 };
 
 std::uint8_t relativeXRef[]{
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
 
-	0x00, 0x00,
+	0x00,
+	0x00,
 #ifdef __x86_64
-	0x00, 0x00,
+	0x00,
+	0x00,
 #endif
 
-	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
+	0xFF,
 };
 
 std::span<std::byte> absolutePadded{ reinterpret_cast<std::byte*>(absoluteXRef), sizeof(absoluteXRef) };
@@ -111,7 +153,8 @@ std::span<std::byte> absoluteUnpadded{ reinterpret_cast<std::byte*>(absoluteXRef
 std::span<std::byte> relativePadded{ reinterpret_cast<std::byte*>(relativeXRef), sizeof(relativeXRef) };
 std::span<std::byte> relativeUnpadded{ reinterpret_cast<std::byte*>(relativeXRef) + 8, sizeof(relativeXRef) - 16 };
 
-void initXRefArray() {
+void initXRefArray()
+{
 	std::size_t offset = 8;
 
 	memcpy(absoluteXRef + offset, &target, sizeof(void*));
@@ -125,7 +168,8 @@ void initXRefArray() {
 	std::memcpy(relativeXRef + offset, &jmpTarget, sizeof(std::int32_t));
 }
 
-TEST(XRefPattern, AbsoluteForwardsPadded) {
+TEST(XRefPattern, AbsoluteForwardsPadded)
+{
 	initXRefArray();
 
 	auto signature = XRefSignature<false, true>{ target };
@@ -136,7 +180,8 @@ TEST(XRefPattern, AbsoluteForwardsPadded) {
 	EXPECT_EQ(offset, 8);
 }
 
-TEST(XRefPattern, RelativeForwardsPadded) {
+TEST(XRefPattern, RelativeForwardsPadded)
+{
 	initXRefArray();
 
 	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
@@ -147,7 +192,8 @@ TEST(XRefPattern, RelativeForwardsPadded) {
 	EXPECT_EQ(offset, 8);
 }
 
-TEST(XRefPattern, AbsoluteForwardsUnpadded) {
+TEST(XRefPattern, AbsoluteForwardsUnpadded)
+{
 	initXRefArray();
 
 	auto signature = XRefSignature<false, true>{ target };
@@ -158,7 +204,8 @@ TEST(XRefPattern, AbsoluteForwardsUnpadded) {
 	EXPECT_EQ(offset, 0);
 }
 
-TEST(XRefPattern, RelativeForwardsUnpadded) {
+TEST(XRefPattern, RelativeForwardsUnpadded)
+{
 	initXRefArray();
 
 	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
@@ -169,7 +216,8 @@ TEST(XRefPattern, RelativeForwardsUnpadded) {
 	EXPECT_EQ(offset, 0);
 }
 
-TEST(XRefPattern, AbsoluteBackwardsPadded) {
+TEST(XRefPattern, AbsoluteBackwardsPadded)
+{
 	initXRefArray();
 
 	auto signature = XRefSignature<false, true>{ target };
@@ -180,7 +228,8 @@ TEST(XRefPattern, AbsoluteBackwardsPadded) {
 	EXPECT_EQ(offset, 15);
 }
 
-TEST(XRefPattern, RelativeBackwardsPadded) {
+TEST(XRefPattern, RelativeBackwardsPadded)
+{
 	initXRefArray();
 
 	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
@@ -191,7 +240,8 @@ TEST(XRefPattern, RelativeBackwardsPadded) {
 	EXPECT_EQ(offset, 11);
 }
 
-TEST(XRefPattern, AbsoluteBackwardsUnpadded) {
+TEST(XRefPattern, AbsoluteBackwardsUnpadded)
+{
 	initXRefArray();
 
 	auto signature = XRefSignature<false, true>{ target };
@@ -202,7 +252,8 @@ TEST(XRefPattern, AbsoluteBackwardsUnpadded) {
 	EXPECT_EQ(offset, 7);
 }
 
-TEST(XRefPattern, RelativeBackwardsUnpadded) {
+TEST(XRefPattern, RelativeBackwardsUnpadded)
+{
 	initXRefArray();
 
 	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
@@ -213,7 +264,8 @@ TEST(XRefPattern, RelativeBackwardsUnpadded) {
 	EXPECT_EQ(offset, 3);
 }
 
-TEST(XRefPattern, All) {
+TEST(XRefPattern, All)
+{
 	initXRefArray();
 
 	auto absoluteSig = XRefSignature<false, true>{ target };

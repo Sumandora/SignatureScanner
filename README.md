@@ -1,11 +1,14 @@
 # Signature Scanner
 
-The Signature Scanner is a lightweight, C++ library designed for game hacking. It provides functionality for scanning patterns or signatures within binary files. The scanner supports IDA and code-style signatures, strings and xrefs.
+The Signature Scanner is a lightweight, C++ library designed for game hacking. It provides functionality for scanning
+patterns or signatures within binary files. The scanner supports IDA and code-style signatures, strings and xrefs.
 
 ## More advanced solutions
+
 - [Binary Code Recognition Library](https://github.com/Sumandora/bcrl)
 
 ## Features
+
 - Supports IDA and Code-style signatures
 - Supports string search
 - Supports XRef searches

@@ -3,9 +3,9 @@
 
 #include "SignatureScanner/SignatureScanner.hpp"
 
-#include <optional>
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 namespace SignatureScanner {
@@ -236,11 +236,11 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
 		{
 			auto iterEnd = iter;
-			if(iterEnd == end)
+			if (iterEnd == end)
 				return false;
-			for(std::size_t i = 0; i < elements.size(); i++) {
+			for (std::size_t i = 0; i < elements.size(); i++) {
 				iterEnd++;
-				if(iterEnd == end)
+				if (iterEnd == end)
 					return false;
 			}
 			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<decltype(*iter)>);
