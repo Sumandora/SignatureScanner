@@ -71,6 +71,51 @@ namespace SignatureScanner {
 		TemplateString(const char (&str)[N]) -> TemplateString<N - 1>;
 	}
 
+	class PatternSignature : public Signature {
+	private:
+		std::vector<detail::PatternElement> elements;
+
+	public:
+		constexpr PatternSignature(std::vector<detail::PatternElement>&& elements)
+			: elements(std::move(elements))
+		{
+		}
+		template<std::size_t N>
+		constexpr PatternSignature(std::array<detail::PatternElement, N>&& elements)
+			: elements(elements.begin(), elements.end())
+		{
+		}
+
+		[[nodiscard]] constexpr const std::vector<detail::PatternElement>& getElements() const { return elements; }
+		[[nodiscard]] constexpr std::size_t getLength() const { return elements.size(); }
+
+		template <typename Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr auto next(const Iter& begin, const Sent& end) const
+		{
+			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
+		}
+
+		template <typename Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr auto prev(const Iter& begin, const Sent& end) const
+		{
+			return std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
+		}
+
+		template <typename Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
+		{
+			auto iterEnd = iter;
+			if (iterEnd == end)
+				return false;
+			for (std::size_t i = 0; i < elements.size(); i++) {
+				iterEnd++;
+				if (iterEnd == end)
+					return false;
+			}
+			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<decltype(*iter)>);
+		}
+	};
+
 	namespace IDA {
 		namespace ida_detail {
 			constexpr uint8_t chrToHex(char c)
@@ -106,7 +151,7 @@ namespace SignatureScanner {
 					if (!wasChar && isChar)
 						count++;
 
-					wasChar = c != delimiter;
+					wasChar = isChar;
 				}
 
 				return count;
@@ -121,17 +166,17 @@ namespace SignatureScanner {
 			}
 
 			template <typename Range, typename Inserter>
-			constexpr void buildSignature(const Range& range, Inserter inserter, char Delimiter, char Wildcard)
+			constexpr void buildSignature(const Range& range, Inserter inserter, char delimiter, char wildcard)
 			{
 				std::string word;
 
 				std::size_t idx = 0;
 				for (char c : range)
-					if (c == Delimiter) {
+					if (c == delimiter) {
 						if (word.empty())
 							continue;
 
-						inserter = buildWord(word, Wildcard);
+						inserter = buildWord(word, wildcard);
 						idx++;
 
 						word = "";
@@ -139,7 +184,7 @@ namespace SignatureScanner {
 						word += c;
 
 				if (!word.empty())
-					inserter = buildWord(word, Wildcard);
+					inserter = buildWord(word, wildcard);
 			}
 		}
 
@@ -174,7 +219,7 @@ namespace SignatureScanner {
 		template <detail::TemplateString String, bool IncludeTerminator = true, char Wildcard = DEFAULT_WILDCARD>
 		consteval auto build()
 		{
-			std::array<detail::PatternElement, IncludeTerminator ? String.size() + 1 : String.size()> signature;
+			std::array<detail::PatternElement, String.size() + (IncludeTerminator ? 1 : 0)> signature;
 
 			for (size_t i = 0; i < String.size(); i++)
 				if (String[i] == Wildcard)
@@ -183,7 +228,7 @@ namespace SignatureScanner {
 					signature[i] = static_cast<detail::InnerPatternElement>(String[i]);
 
 			if constexpr (IncludeTerminator)
-				signature[signature.size() - 1] = (static_cast<detail::InnerPatternElement>('\0'));
+				signature[signature.size() - 1] = static_cast<detail::InnerPatternElement>('\0');
 
 			return signature;
 		}
@@ -205,47 +250,6 @@ namespace SignatureScanner {
 			return signature;
 		}
 	}
-
-	template <std::size_t N>
-	class PatternSignature : public Signature {
-	private:
-		std::array<detail::PatternElement, N> elements;
-
-	public:
-		static constexpr std::size_t Length = N;
-		constexpr PatternSignature(std::array<detail::PatternElement, N>&& elements)
-			: elements(std::move(elements))
-		{
-		}
-
-		[[nodiscard]] constexpr const std::array<detail::PatternElement, N>& getElements() const { return elements; }
-
-		template <typename Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto next(const Iter& begin, const Sent& end) const
-		{
-			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
-		}
-
-		template <typename Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto prev(const Iter& begin, const Sent& end) const
-		{
-			return std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
-		}
-
-		template <typename Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
-		{
-			auto iterEnd = iter;
-			if (iterEnd == end)
-				return false;
-			for (std::size_t i = 0; i < elements.size(); i++) {
-				iterEnd++;
-				if (iterEnd == end)
-					return false;
-			}
-			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<decltype(*iter)>);
-		}
-	};
 }
 
 #endif
