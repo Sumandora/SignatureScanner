@@ -23,7 +23,7 @@ std::span<std::byte> bytesSpan{ reinterpret_cast<std::byte*>(bytes), sizeof(byte
 
 TEST(BytePattern, Forwards)
 {
-	PatternSignature signature = IDA::build<"e4">();
+	PatternSignature signature = buildBytePattern<"e4">();
 	auto hit = signature.next(bytesSpan.begin(), bytesSpan.end());
 
 	EXPECT_NE(hit, bytesSpan.end());
@@ -33,7 +33,7 @@ TEST(BytePattern, Forwards)
 
 TEST(BytePattern, Backwards)
 {
-	PatternSignature signature = IDA::build<"e4">();
+	PatternSignature signature = buildBytePattern<"e4">();
 	auto hit = signature.prev(bytesSpan.rbegin(), bytesSpan.rend());
 
 	EXPECT_NE(hit, bytesSpan.rend());
@@ -43,7 +43,7 @@ TEST(BytePattern, Backwards)
 
 TEST(BytePattern, All)
 {
-	PatternSignature signature = IDA::build<"a9">();
+	PatternSignature signature = buildBytePattern<"a9">();
 	std::vector<decltype(bytesSpan)::iterator> hits;
 	signature.all(bytesSpan.begin(), bytesSpan.end(), std::back_inserter(hits));
 
@@ -58,7 +58,7 @@ std::span<std::byte> stringSpan{ reinterpret_cast<std::byte*>(string.data()), st
 
 TEST(StringPattern, Forwards)
 {
-	PatternSignature signature = String::build<"Forty-two", false>();
+	PatternSignature signature = buildStringPattern<"Forty-two", false>();
 	auto hit = signature.next(stringSpan.begin(), stringSpan.end());
 
 	EXPECT_NE(hit, stringSpan.end());
@@ -68,17 +68,17 @@ TEST(StringPattern, Forwards)
 
 TEST(StringPattern, Backwards)
 {
-	PatternSignature signature = String::build<"Forty-two", false>();
+	PatternSignature signature = buildStringPattern<"Forty-two", false>();
 	auto hit = signature.prev(stringSpan.rbegin(), stringSpan.rend());
 
 	EXPECT_NE(hit, stringSpan.rend());
 	std::size_t offset = std::distance(stringSpan.rbegin(), hit);
-	EXPECT_EQ(offset, 0);
+	EXPECT_EQ(offset, 8);
 }
 
 TEST(StringPattern, All)
 {
-	PatternSignature signature = String::build<" ?? ", false>();
+	PatternSignature signature = buildStringPattern<" ?? ", false>();
 	std::vector<decltype(stringSpan)::iterator> hits;
 	signature.all(stringSpan.begin(), stringSpan.end(), std::back_inserter(hits));
 
