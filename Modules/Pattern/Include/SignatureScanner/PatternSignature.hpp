@@ -162,13 +162,13 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr const std::vector<PatternElement>& getElements() const { return elements; }
 		[[nodiscard]] constexpr std::size_t getLength() const { return elements.size(); }
 
-		template <typename Iter, std::sentinel_for<Iter> Sent>
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr auto next(const Iter& begin, const Sent& end) const
 		{
 			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
 		}
 
-		template <typename Iter, std::sentinel_for<Iter> Sent>
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr auto prev(const Iter& begin, const Sent& end) const
 		{
 			auto match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
@@ -179,7 +179,7 @@ namespace SignatureScanner {
 			return match;
 		}
 
-		template <typename Iter, std::sentinel_for<Iter> Sent>
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
 		{
 			auto iterEnd = iter;

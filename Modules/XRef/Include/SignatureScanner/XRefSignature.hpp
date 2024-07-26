@@ -52,7 +52,7 @@ namespace SignatureScanner {
 		}
 
 	public:
-		template <typename Iter, typename Sent>
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr auto next(Iter it, const Sent& end) const
 		{
 			for (; it != end; it++)
@@ -62,7 +62,7 @@ namespace SignatureScanner {
 			return it;
 		}
 
-		template <typename Iter, typename Sent>
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr auto prev(Iter it, const Sent& end) const
 		{
 			for (; it != end; it++) {
@@ -78,7 +78,7 @@ namespace SignatureScanner {
 			return it;
 		}
 
-		template <typename Iter, std::sentinel_for<Iter> Sent = std::unreachable_sentinel_t>
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent = std::unreachable_sentinel_t>
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
 		{
 			if constexpr (Absolute)

@@ -6,26 +6,26 @@
 namespace SignatureScanner {
 	class Signature {
 	public:
-		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto next(this Self&& self, const Iter& begin, const Sent& end)
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr auto next(this auto&& self, const Iter& begin, const Sent& end)
 		{
 			return self.next(begin, end);
 		}
 
-		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto prev(this Self&& self, const Iter& begin, const Sent& end)
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr auto prev(this auto&& self, const Iter& begin, const Sent& end)
 		{
 			return self.prev(begin, end);
 		}
 
-		template <typename Self, typename Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr bool doesMatch(this Self&& self, const Iter& iter, const Sent& end = std::unreachable_sentinel_t{})
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr bool doesMatch(this auto&& self, const Iter& iter, const Sent& end = std::unreachable_sentinel_t{})
 		{
 			return self.doesMatch(iter, end);
 		}
 
-		template <typename Self, typename Iter, typename Sent, typename Inserter>
-		[[nodiscard]] constexpr auto all(this Self&& self, Iter begin, const Sent& end, Inserter inserter)
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent, std::output_iterator<Iter> Inserter>
+		[[nodiscard]] constexpr auto all(this auto&& self, Iter begin, const Sent& end, Inserter inserter)
 		{
 			while (true) {
 				auto it = self.next(begin, end);
