@@ -7,8 +7,8 @@
 
 namespace SignatureScanner {
 	namespace detail {
-		template <typename T, std::endian Endianness, typename Iter, std::sentinel_for<Iter> Sent>
-		constexpr std::optional<T> convertBytes(Iter iter, const Sent& end)
+		template <typename T, std::endian Endianness, std::input_iterator Iter>
+		constexpr std::optional<T> convertBytes(Iter iter, const std::sentinel_for<Iter> auto& end)
 		{
 			std::array<std::byte, sizeof(T)> arr;
 			for (std::size_t i = 0; i < sizeof(T); i++) {
@@ -52,8 +52,8 @@ namespace SignatureScanner {
 		}
 
 	public:
-		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto next(Iter it, const Sent& end) const
+		template <std::input_iterator Iter>
+		[[nodiscard]] constexpr Iter next(Iter it, const std::sentinel_for<Iter> auto& end) const
 		{
 			for (; it != end; it++)
 				if (doesMatch(it, end))
@@ -62,8 +62,8 @@ namespace SignatureScanner {
 			return it;
 		}
 
-		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto prev(Iter it, const Sent& end) const
+		template <std::input_iterator Iter>
+		[[nodiscard]] constexpr Iter prev(Iter it, const std::sentinel_for<Iter> auto& end) const
 		{
 			for (; it != end; it++) {
 				// Regarding the "- 1":
@@ -78,8 +78,8 @@ namespace SignatureScanner {
 			return it;
 		}
 
-		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent = std::unreachable_sentinel_t>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
+		template <std::input_iterator Iter>
+		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
 		{
 			if constexpr (Absolute)
 				if (auto bytes = detail::convertBytes<std::uintptr_t, Endianness>(iter, end); bytes.has_value())

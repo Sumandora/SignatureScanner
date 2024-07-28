@@ -27,18 +27,19 @@ namespace SignatureScanner {
 		 */
 		template <typename T, std::size_t N>
 		struct ArrayInserter {
-			std::array<T, N>& array;
+			using difference_type = std::ptrdiff_t;
+
+			std::array<T, N>* array;
 			std::size_t idx = 0;
 
 			constexpr explicit ArrayInserter(std::array<T, N>& array)
-				: array(array)
+				: array(&array)
 			{
 			}
 
 			constexpr ArrayInserter& operator=(T obj)
 			{
-				array[idx] = obj;
-				idx++;
+				(*array)[idx] = obj;
 				return *this;
 			}
 
@@ -48,11 +49,14 @@ namespace SignatureScanner {
 			}
 			constexpr ArrayInserter& operator++()
 			{
+				idx++;
 				return *this;
 			}
-			constexpr ArrayInserter& operator++(int)
+			constexpr ArrayInserter operator++(int)
 			{
-				return *this;
+				ArrayInserter it = *this;
+				idx++;
+				return it;
 			}
 		};
 
@@ -118,8 +122,8 @@ namespace SignatureScanner {
 				return static_cast<InnerPatternElement>(strToHex(word));
 		}
 
-		template <typename Range, typename Inserter>
-		constexpr void buildSignature(const Range& range, Inserter inserter, char delimiter, char wildcard)
+		template <std::ranges::input_range Range> requires std::convertible_to<std::iter_value_t<std::ranges::iterator_t<Range>>, char>
+		constexpr void buildSignature(const Range& range, std::output_iterator<PatternElement> auto inserter, char delimiter, char wildcard)
 		{
 			std::string word;
 
@@ -129,7 +133,7 @@ namespace SignatureScanner {
 					if (word.empty())
 						continue;
 
-					inserter = buildWord(word, wildcard);
+					*inserter++ = buildWord(word, wildcard);
 					idx++;
 
 					word = "";
@@ -137,7 +141,7 @@ namespace SignatureScanner {
 					word += c;
 
 			if (!word.empty())
-				inserter = buildWord(word, wildcard);
+				*inserter++ = buildWord(word, wildcard);
 		}
 	}
 
@@ -162,14 +166,14 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr const std::vector<PatternElement>& getElements() const { return elements; }
 		[[nodiscard]] constexpr std::size_t getLength() const { return elements.size(); }
 
-		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto next(const Iter& begin, const Sent& end) const
+		template <std::input_iterator Iter>
+		[[nodiscard]] constexpr Iter next(const Iter& begin, const std::sentinel_for<Iter> auto& end) const
 		{
 			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
 		}
 
-		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr auto prev(const Iter& begin, const Sent& end) const
+		template <std::input_iterator Iter>
+		[[nodiscard]] constexpr Iter prev(const Iter& begin, const std::sentinel_for<Iter> auto& end) const
 		{
 			auto match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
 
@@ -179,10 +183,10 @@ namespace SignatureScanner {
 			return match;
 		}
 
-		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Sent& end = std::unreachable_sentinel_t{}) const
+		template <std::input_iterator Iter>
+		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
 		{
-			auto iterEnd = iter;
+			std::input_iterator auto iterEnd = iter;
 			if (iterEnd == end)
 				return false;
 			for (std::size_t i = 0; i < elements.size(); i++) {
