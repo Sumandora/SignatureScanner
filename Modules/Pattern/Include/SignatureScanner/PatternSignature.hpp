@@ -187,12 +187,10 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
 		{
 			std::input_iterator auto iterEnd = iter;
-			if (iterEnd == end)
-				return false;
 			for (std::size_t i = 0; i < elements.size(); i++) {
-				iterEnd++;
 				if (iterEnd == end)
 					return false;
+				iterEnd++;
 			}
 			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<decltype(*iter)>);
 		}
@@ -225,7 +223,7 @@ namespace SignatureScanner {
 	{
 		std::array<PatternElement, String.size() + (IncludeTerminator ? 1 : 0)> signature;
 
-		for (size_t i = 0; i < String.size(); i++)
+		for (std::size_t i = 0; i < String.size(); i++)
 			if (String[i] == Wildcard)
 				signature[i] = std::nullopt;
 			else
