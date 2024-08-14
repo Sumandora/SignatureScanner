@@ -118,8 +118,9 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr bool doesRelativeMatch(RelAddrType offset, std::uintptr_t location) const
 			requires Relative
 		{
-			// This is a special which I encountered if the address has 0x00 bytes before it, thus it becomes location + instructionLength + 0.
-			// I can't imagine a case in which this is desired.
+			// This is special, when the address has 0x00 bytes in front of it, then offset is zero,
+			// so location + instructionLength + 0. This usually happens when XRefs are searched in data sections.
+			// There shouldn't be a need for this, so it is prevented here.
 			if (offset == 0)
 				return false;
 			return location + instructionLength + offset == address;

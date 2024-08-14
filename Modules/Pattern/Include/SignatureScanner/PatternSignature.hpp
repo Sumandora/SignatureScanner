@@ -22,7 +22,7 @@ namespace SignatureScanner {
 
 		/**
 		 * This thing is pretty much useless outside of this use-case,
-		 * because the array could be partially filled up when we get it,
+		 * because the array could be partially filled up when it is passed here,
 		 * for our use-case this doesn't matter.
 		 */
 		template <typename T, std::size_t N>
