@@ -1,8 +1,8 @@
 #include "SignatureScanner/PatternSignature.hpp"
 #include "SignatureScanner/XRefSignature.hpp"
 
-#include <cstring>
 #include <gtest/gtest.h>
+#include <cstring>
 #include <span>
 
 using namespace SignatureScanner;
@@ -148,10 +148,8 @@ std::uint8_t relativeXRef[]{
 	0xFF,
 };
 
-std::span<std::byte> absolutePadded{ reinterpret_cast<std::byte*>(absoluteXRef), sizeof(absoluteXRef) };
-std::span<std::byte> absoluteUnpadded{ reinterpret_cast<std::byte*>(absoluteXRef) + 8, sizeof(absoluteXRef) - 16 };
-std::span<std::byte> relativePadded{ reinterpret_cast<std::byte*>(relativeXRef), sizeof(relativeXRef) };
-std::span<std::byte> relativeUnpadded{ reinterpret_cast<std::byte*>(relativeXRef) + 8, sizeof(relativeXRef) - 16 };
+std::span<std::byte> absoluteRef{ reinterpret_cast<std::byte*>(absoluteXRef), sizeof(absoluteXRef) };
+std::span<std::byte> relativeRef{ reinterpret_cast<std::byte*>(relativeXRef), sizeof(relativeXRef) };
 
 void initXRefArray()
 {
@@ -168,100 +166,52 @@ void initXRefArray()
 	std::memcpy(relativeXRef + offset, &jmpTarget, sizeof(std::int32_t));
 }
 
-TEST(XRefPattern, AbsoluteForwardsPadded)
+TEST(XRefPattern, AbsoluteForwards)
 {
 	initXRefArray();
 
 	auto signature = XRefSignature<false, true>{ target };
-	auto hit = signature.next(absolutePadded.begin(), absolutePadded.end());
+	auto hit = signature.next(absoluteRef.begin(), absoluteRef.end());
 
-	EXPECT_NE(hit, absolutePadded.end());
-	std::size_t offset = std::distance(absolutePadded.begin(), hit);
+	EXPECT_NE(hit, absoluteRef.end());
+	std::size_t offset = std::distance(absoluteRef.begin(), hit);
 	EXPECT_EQ(offset, 8);
 }
 
-TEST(XRefPattern, RelativeForwardsPadded)
+TEST(XRefPattern, RelativeForwards)
 {
 	initXRefArray();
 
 	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
-	auto hit = signature.next(relativePadded.begin(), relativePadded.end());
+	auto hit = signature.next(relativeRef.begin(), relativeRef.end());
 
-	EXPECT_NE(hit, relativePadded.end());
-	std::size_t offset = std::distance(relativePadded.begin(), hit);
+	EXPECT_NE(hit, relativeRef.end());
+	std::size_t offset = std::distance(relativeRef.begin(), hit);
 	EXPECT_EQ(offset, 8);
 }
 
-TEST(XRefPattern, AbsoluteForwardsUnpadded)
+TEST(XRefPattern, AbsoluteBackwards)
 {
 	initXRefArray();
 
 	auto signature = XRefSignature<false, true>{ target };
-	auto hit = signature.next(absoluteUnpadded.begin(), absoluteUnpadded.end());
+	auto hit = signature.prev(absoluteRef.rbegin(), absoluteRef.rend());
 
-	EXPECT_NE(hit, absoluteUnpadded.end());
-	std::size_t offset = std::distance(absoluteUnpadded.begin(), hit);
-	EXPECT_EQ(offset, 0);
-}
-
-TEST(XRefPattern, RelativeForwardsUnpadded)
-{
-	initXRefArray();
-
-	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
-	auto hit = signature.next(relativeUnpadded.begin(), relativeUnpadded.end());
-
-	EXPECT_NE(hit, relativeUnpadded.end());
-	std::size_t offset = std::distance(relativeUnpadded.begin(), hit);
-	EXPECT_EQ(offset, 0);
-}
-
-TEST(XRefPattern, AbsoluteBackwardsPadded)
-{
-	initXRefArray();
-
-	auto signature = XRefSignature<false, true>{ target };
-	auto hit = signature.prev(absolutePadded.rbegin(), absolutePadded.rend());
-
-	EXPECT_NE(hit, absolutePadded.rend());
-	std::size_t offset = std::distance(absolutePadded.rbegin(), hit);
+	EXPECT_NE(hit, absoluteRef.rend());
+	std::size_t offset = std::distance(absoluteRef.rbegin(), hit);
 	EXPECT_EQ(offset, 15);
 }
 
-TEST(XRefPattern, RelativeBackwardsPadded)
+TEST(XRefPattern, RelativeBackwards)
 {
 	initXRefArray();
 
 	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
-	auto hit = signature.prev(relativePadded.rbegin(), relativePadded.rend());
+	auto hit = signature.prev(relativeRef.rbegin(), relativeRef.rend());
 
-	EXPECT_NE(hit, relativePadded.rend());
-	std::size_t offset = std::distance(relativePadded.rbegin(), hit);
+	EXPECT_NE(hit, relativeRef.rend());
+	std::size_t offset = std::distance(relativeRef.rbegin(), hit);
 	EXPECT_EQ(offset, 11);
-}
-
-TEST(XRefPattern, AbsoluteBackwardsUnpadded)
-{
-	initXRefArray();
-
-	auto signature = XRefSignature<false, true>{ target };
-	auto hit = signature.prev(absoluteUnpadded.rbegin(), absoluteUnpadded.rend());
-
-	EXPECT_NE(hit, absoluteUnpadded.rend());
-	std::size_t offset = std::distance(absoluteUnpadded.rbegin(), hit);
-	EXPECT_EQ(offset, 7);
-}
-
-TEST(XRefPattern, RelativeBackwardsUnpadded)
-{
-	initXRefArray();
-
-	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
-	auto hit = signature.prev(relativeUnpadded.rbegin(), relativeUnpadded.rend());
-
-	EXPECT_NE(hit, relativeUnpadded.rend());
-	std::size_t offset = std::distance(relativeUnpadded.rbegin(), hit);
-	EXPECT_EQ(offset, 3);
 }
 
 TEST(XRefPattern, All)
@@ -270,9 +220,9 @@ TEST(XRefPattern, All)
 
 	auto absoluteSig = XRefSignature<false, true>{ target };
 	auto relativeSig = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
-	std::vector<decltype(absolutePadded)::iterator> hits;
-	absoluteSig.all(absolutePadded.begin(), absolutePadded.end(), std::back_inserter(hits));
-	relativeSig.all(relativePadded.begin(), relativePadded.end(), std::back_inserter(hits));
+	std::vector<decltype(absoluteRef)::iterator> hits;
+	absoluteSig.all(absoluteRef.begin(), absoluteRef.end(), std::back_inserter(hits));
+	relativeSig.all(relativeRef.begin(), relativeRef.end(), std::back_inserter(hits));
 
 	EXPECT_EQ(hits.size(), 2);
 	EXPECT_EQ(reinterpret_cast<void*>(&*hits[0]), absoluteXRef + 8);

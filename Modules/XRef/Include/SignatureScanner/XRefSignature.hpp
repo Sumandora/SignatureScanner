@@ -3,6 +3,8 @@
 
 #include "SignatureScanner/SignatureScanner.hpp"
 
+#include <bit>
+#include <optional>
 #include <variant>
 
 namespace SignatureScanner {

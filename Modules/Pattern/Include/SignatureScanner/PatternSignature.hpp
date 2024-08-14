@@ -62,14 +62,12 @@ namespace SignatureScanner {
 
 		template <std::size_t N>
 		struct TemplateString : std::array<char, N> {
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "google-explicit-constructor"
+			// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
 			constexpr TemplateString(const char (&str)[N + 1])
 				: std::array<char, N>()
 			{
 				std::copy(std::begin(str), std::end(str) - 1, ArrayInserter(*this));
 			}
-#pragma clang diagnostic pop
 		};
 
 		template <std::size_t N>
@@ -79,9 +77,11 @@ namespace SignatureScanner {
 		{
 			if ('0' <= c && c <= '9') {
 				return c - '0';
-			} else if ('A' <= c && c <= 'F') {
+			}
+			if ('A' <= c && c <= 'F') {
 				return c - 'A' + 10;
-			} else if ('a' <= c && c <= 'f') {
+			}
+			if ('a' <= c && c <= 'f') {
 				return c - 'a' + 10;
 			}
 			return 0;
@@ -118,11 +118,12 @@ namespace SignatureScanner {
 		{
 			if (std::ranges::all_of(word, [wildcard](char c) { return c == wildcard; }))
 				return std::nullopt;
-			else
-				return static_cast<InnerPatternElement>(strToHex(word));
+
+			return static_cast<InnerPatternElement>(strToHex(word));
 		}
 
-		template <std::ranges::input_range Range> requires std::convertible_to<std::iter_value_t<std::ranges::iterator_t<Range>>, char>
+		template <std::ranges::input_range Range>
+			requires std::convertible_to<std::iter_value_t<std::ranges::iterator_t<Range>>, char>
 		constexpr void buildSignature(const Range& range, std::output_iterator<PatternElement> auto inserter, char delimiter, char wildcard)
 		{
 			std::string word;
@@ -150,18 +151,18 @@ namespace SignatureScanner {
 		std::vector<PatternElement> elements;
 
 	public:
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "google-explicit-constructor"
+		// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
 		constexpr PatternSignature(std::vector<PatternElement>&& elements)
 			: elements(std::move(elements))
 		{
 		}
+
 		template <std::size_t N>
+		// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
 		constexpr PatternSignature(std::array<PatternElement, N>&& elements)
 			: elements(elements.begin(), elements.end())
 		{
 		}
-#pragma clang diagnostic pop
 
 		[[nodiscard]] constexpr const std::vector<PatternElement>& getElements() const { return elements; }
 		[[nodiscard]] constexpr std::size_t getLength() const { return elements.size(); }
@@ -175,10 +176,10 @@ namespace SignatureScanner {
 		template <std::input_iterator Iter>
 		[[nodiscard]] constexpr Iter prev(const Iter& begin, const std::sentinel_for<Iter> auto& end) const
 		{
-			auto match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
+			auto match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<decltype(*std::declval<Iter>())>).end();
 
-			// This match will be at the last byte of the pattern, for consistency we need the beginning.
-			std::advance(match, getLength() - 1);
+			// This match will be one-after-the-end of the pattern, for consistency we need the first byte (from the beginning).
+			match--;
 
 			return match;
 		}
