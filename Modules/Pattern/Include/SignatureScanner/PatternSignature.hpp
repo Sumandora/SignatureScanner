@@ -4,8 +4,16 @@
 #include "SignatureScanner/SignatureScanner.hpp"
 
 #include <algorithm>
+#include <array>
+#include <concepts>
+#include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <optional>
+#include <ranges>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 namespace SignatureScanner {

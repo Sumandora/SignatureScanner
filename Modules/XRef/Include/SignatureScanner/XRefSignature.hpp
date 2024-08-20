@@ -3,8 +3,13 @@
 
 #include "SignatureScanner/SignatureScanner.hpp"
 
+#include <array>
 #include <bit>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <optional>
+#include <type_traits>
 #include <variant>
 
 namespace SignatureScanner {
