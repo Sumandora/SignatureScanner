@@ -2,12 +2,18 @@
 #include "SignatureScanner/XRefSignature.hpp"
 
 #include <gtest/gtest.h>
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <span>
+#include <string_view>
+#include <vector>
 
 using namespace SignatureScanner;
 
-static std::uint8_t bytes[]{
+std::uint8_t bytes[]{
 	0x68, 0x74, 0x16, 0xcd, 0xaa, 0xe3, 0x6, 0x95, 0xcb, 0xeb, 0xe7,
 	0x64, 0x1e, 0xbb, 0x5a, 0xf2, 0x65, 0xe5, 0x53, 0x85, 0xb8,
 	0xfe, 0xb4, 0x3f, 0xb4, 0x38, 0x3a, 0x1a, 0xc4, 0x5f, 0x00,
@@ -19,7 +25,7 @@ static std::uint8_t bytes[]{
 	0xad, 0xaf, 0x7c, 0x8, 0xee, 0xca, 0xdf, 0xdb, 0x2c, 0x76,
 	0xa9, 0x49, 0xb8, 0xf5, 0xcd, 0x4d, 0xa9, 0x14, 0xc0, 0xaf
 };
-std::span<std::byte> bytesSpan{ reinterpret_cast<std::byte*>(bytes), sizeof(bytes) };
+std::span<std::uint8_t> bytesSpan{ bytes };
 
 TEST(BytePattern, Forwards)
 {
@@ -53,39 +59,40 @@ TEST(BytePattern, All)
 	EXPECT_EQ(std::distance(bytesSpan.begin(), hits[2]), 97);
 }
 
-std::string string = "The Answer to the Great Question Of Life, the Universe and Everything Is Forty-two";
-std::span<std::byte> stringSpan{ reinterpret_cast<std::byte*>(string.data()), string.size() };
+// NOLINTNEXTLINE(cert-err58-cpp)
+std::string_view string = "The Answer to the Great Question Of Life, the Universe and Everything Is Forty-two";
 
 TEST(StringPattern, Forwards)
 {
 	PatternSignature signature = buildStringPattern<"Forty-two", false>();
-	auto hit = signature.next(stringSpan.begin(), stringSpan.end());
+	// NOLINTNEXTLINE(llvm-qualified-auto)
+	auto hit = signature.next(string.begin(), string.end());
 
-	EXPECT_NE(hit, stringSpan.end());
-	std::size_t offset = std::distance(stringSpan.begin(), hit);
+	EXPECT_NE(hit, string.end());
+	std::size_t offset = std::distance(string.begin(), hit);
 	EXPECT_EQ(offset, 73);
 }
 
 TEST(StringPattern, Backwards)
 {
 	PatternSignature signature = buildStringPattern<"Forty-two", false>();
-	auto hit = signature.prev(stringSpan.rbegin(), stringSpan.rend());
+	auto hit = signature.prev(string.rbegin(), string.rend());
 
-	EXPECT_NE(hit, stringSpan.rend());
-	std::size_t offset = std::distance(stringSpan.rbegin(), hit);
+	EXPECT_NE(hit, string.rend());
+	std::size_t offset = std::distance(string.rbegin(), hit);
 	EXPECT_EQ(offset, 8);
 }
 
 TEST(StringPattern, All)
 {
 	PatternSignature signature = buildStringPattern<" ?? ", false>();
-	std::vector<decltype(stringSpan)::iterator> hits;
-	signature.all(stringSpan.begin(), stringSpan.end(), std::back_inserter(hits));
+	std::vector<decltype(string)::iterator> hits;
+	signature.all(string.begin(), string.end(), std::back_inserter(hits));
 
 	EXPECT_EQ(hits.size(), 3);
-	EXPECT_EQ(std::distance(stringSpan.begin(), hits[0]), 10);
-	EXPECT_EQ(std::distance(stringSpan.begin(), hits[1]), 32);
-	EXPECT_EQ(std::distance(stringSpan.begin(), hits[2]), 69);
+	EXPECT_EQ(std::distance(string.begin(), hits[0]), 10);
+	EXPECT_EQ(std::distance(string.begin(), hits[1]), 32);
+	EXPECT_EQ(std::distance(string.begin(), hits[2]), 69);
 }
 
 std::uintptr_t target = 0x13371337;
@@ -148,8 +155,8 @@ std::uint8_t relativeXRef[]{
 	0xFF,
 };
 
-std::span<std::byte> absoluteRef{ reinterpret_cast<std::byte*>(absoluteXRef), sizeof(absoluteXRef) };
-std::span<std::byte> relativeRef{ reinterpret_cast<std::byte*>(relativeXRef), sizeof(relativeXRef) };
+std::span<std::uint8_t> absoluteRef{ absoluteXRef };
+std::span<std::uint8_t> relativeRef{ relativeXRef };
 
 void initXRefArray()
 {

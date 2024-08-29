@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -22,10 +23,18 @@ namespace SignatureScanner {
 
 	namespace detail {
 		template <typename T>
-			requires std::equality_comparable_with<T, std::byte>
 		constexpr auto patternCompare(const T& byte, const PatternElement& elem)
 		{
-			return !elem.has_value() || elem.value() == byte;
+			if (!elem.has_value())
+				return true;
+
+			if constexpr (std::equality_comparable_with<T, std::byte>) {
+				return elem.value() == byte;
+			} else if constexpr (requires() { std::bit_cast<std::byte>(byte); }) {
+				return elem.value() == std::bit_cast<std::byte>(byte);
+			} else {
+				static_assert(false, "T is not a byte(-like) type");
+			}
 		}
 
 		/**
@@ -167,7 +176,7 @@ namespace SignatureScanner {
 
 		template <std::size_t N>
 		// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-		constexpr PatternSignature(std::array<PatternElement, N>&& elements)
+		constexpr PatternSignature(const std::array<PatternElement, N>& elements)
 			: elements(elements.begin(), elements.end())
 		{
 		}
@@ -178,13 +187,13 @@ namespace SignatureScanner {
 		template <std::input_iterator Iter>
 		[[nodiscard]] constexpr Iter next(const Iter& begin, const std::sentinel_for<Iter> auto& end) const
 		{
-			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<decltype(*std::declval<Iter>())>).begin();
+			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<std::iter_value_t<Iter>>).begin();
 		}
 
 		template <std::input_iterator Iter>
 		[[nodiscard]] constexpr Iter prev(const Iter& begin, const std::sentinel_for<Iter> auto& end) const
 		{
-			auto match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<decltype(*std::declval<Iter>())>).end();
+			auto match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<std::iter_value_t<Iter>>).end();
 
 			// This match will be one-after-the-end of the pattern, for consistency we need the first byte (from the beginning).
 			match--;
@@ -201,7 +210,7 @@ namespace SignatureScanner {
 					return false;
 				iterEnd++;
 			}
-			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<decltype(*iter)>);
+			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<std::iter_value_t<Iter>>);
 		}
 	};
 

@@ -5,6 +5,7 @@
 
 #include <array>
 #include <bit>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -21,7 +22,13 @@ namespace SignatureScanner {
 			for (std::size_t i = 0; i < sizeof(T); i++) {
 				if (iter == end)
 					return std::nullopt;
-				arr[i] = *iter;
+				if constexpr (std::assignable_from<std::byte, std::iter_value_t<Iter>>) {
+					arr[i] = *iter;
+				} else if constexpr (requires() { std::bit_cast<std::byte>(*iter); }) {
+					arr[i] = std::bit_cast<std::byte>(*iter);
+				} else {
+					static_assert(false, "Iter type is not a byte(-like) type");
+				}
 				iter++;
 			}
 			T num = std::bit_cast<T>(arr);
