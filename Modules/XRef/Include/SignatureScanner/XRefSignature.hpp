@@ -96,12 +96,12 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
 		{
 			if constexpr (Absolute)
-				if (auto bytes = detail::convertBytes<std::uintptr_t, Endianness>(iter, end); bytes.has_value())
+				if (auto bytes = detail::convertBytes<std::uintptr_t, Endianness>(iter, end))
 					if (doesAbsoluteMatch(bytes.value()))
 						return true;
 
 			if constexpr (Relative)
-				if (auto bytes = detail::convertBytes<RelAddrType, Endianness>(iter, end); bytes.has_value())
+				if (auto bytes = detail::convertBytes<RelAddrType, Endianness>(iter, end))
 					if (doesRelativeMatch(bytes.value(), reinterpret_cast<std::uintptr_t>(&*iter)))
 						return true;
 
