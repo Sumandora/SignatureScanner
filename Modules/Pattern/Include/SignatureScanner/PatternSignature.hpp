@@ -202,15 +202,19 @@ namespace SignatureScanner {
 		}
 
 		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
+		[[nodiscard]] constexpr bool doesMatch(const Iter& iter) const
 		{
-			std::input_iterator auto iterEnd = iter;
-			for (std::size_t i = 0; i < elements.size(); i++) {
-				if (iterEnd == end)
-					return false;
-				iterEnd++;
+			Iter end = iter;
+			for (std::size_t i = 0; i < getLength(); i++) {
+				end++;
 			}
-			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<std::iter_value_t<Iter>>);
+			return doesMatch(iter, end);
+		}
+
+		template <std::input_iterator Iter>
+		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const Iter& end) const
+		{
+			return std::equal(iter, end, elements.cbegin(), elements.end(), detail::patternCompare<std::iter_value_t<Iter>>);
 		}
 	};
 

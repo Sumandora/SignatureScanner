@@ -36,11 +36,22 @@ namespace SignatureScanner {
 				num = std::byteswap(num);
 			return num;
 		}
+
+		template <typename T>
+		struct IsReverseIter : std::false_type {
+		};
+
+		template <typename U>
+		struct IsReverseIter<std::reverse_iterator<U>> : std::true_type {
+		};
+
+		template <typename T>
+		concept IsContiguousReverseIter = IsReverseIter<T>::value && std::contiguous_iterator<decltype(std::declval<T>().base())>;
 	}
 
 	template <bool Relative = true, bool Absolute = true, std::endian Endianness = std::endian::native>
 	class XRefSignature : public Signature {
-		static_assert(Relative || Absolute);
+		static_assert(Relative || Absolute, "!Relative && !Absolute does nothing, refrain from using it.");
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
 		const std::uintptr_t address;
@@ -65,28 +76,68 @@ namespace SignatureScanner {
 		{
 		}
 
-	public:
-		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr Iter next(Iter it, const std::sentinel_for<Iter> auto& end) const
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter next(Iter it, const Sent& end) const
 		{
-			for (; it != end; it++)
-				if (doesMatch(it, end))
-					return it;
+			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && Endianness == std::endian::native) {
+				auto* pBegin = std::to_address(it);
+				auto* pEnd = std::to_address(end);
 
+				for (auto* p = pBegin; p != pEnd; p++) {
+					std::size_t remaining = pEnd - p;
+
+					if constexpr (Absolute)
+						if (remaining >= sizeof(std::uintptr_t))
+							if (doesAbsoluteMatch(*reinterpret_cast<std::uintptr_t*>(p)))
+								return it;
+
+					if constexpr (Relative)
+						if (remaining >= sizeof(RelAddrType))
+							if (doesRelativeMatch(*reinterpret_cast<RelAddrType*>(p), reinterpret_cast<std::uintptr_t>(p)))
+								return it;
+
+					it++;
+				}
+			} else {
+				for (; it != end; it++)
+					if (doesMatch(it, end))
+						return it;
+			}
 			return it;
 		}
 
-		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr Iter prev(Iter it, const std::sentinel_for<Iter> auto& end) const
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter prev(Iter it, const Sent& end) const
 		{
-			for (; it != end; it++) {
-				// Regarding the "- 1":
-				// For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1)
-				// is always true (as long as r is dereferenceable); thus a reverse iterator constructed from
-				// a one-past-the-end iterator dereferences to the last element in a sequence.
-				// https://en.cppreference.com/w/cpp/iterator/reverse_iterator
-				if (doesMatch(std::make_reverse_iterator(it) - 1, std::make_reverse_iterator(end) - 1))
-					return it;
+			if constexpr (detail::IsContiguousReverseIter<Iter> && detail::IsContiguousReverseIter<Sent> && Endianness == std::endian::native) {
+				auto* pBegin = std::to_address(it);
+				auto* pEnd = std::to_address(end);
+
+				for (auto* p = pBegin; p != pEnd; p--) {
+					std::size_t remaining = pBegin - p;
+
+					if constexpr (Absolute)
+						if (remaining >= sizeof(std::uintptr_t))
+							if (doesAbsoluteMatch(*reinterpret_cast<std::uintptr_t*>(p)))
+								return it;
+
+					if constexpr (Relative)
+						if (remaining >= sizeof(RelAddrType))
+							if (doesRelativeMatch(*reinterpret_cast<RelAddrType*>(p), reinterpret_cast<std::uintptr_t>(p)))
+								return it;
+
+					it++;
+				}
+			} else {
+				for (; it != end; it++) {
+					// Regarding the "- 1":
+					// For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1)
+					// is always true (as long as r is dereferenceable); thus a reverse iterator constructed from
+					// a one-past-the-end iterator dereferences to the last element in a sequence.
+					// https://en.cppreference.com/w/cpp/iterator/reverse_iterator
+					if (doesMatch(std::make_reverse_iterator(it) - 1, std::make_reverse_iterator(end) - 1))
+						return it;
+				}
 			}
 
 			return it;
@@ -102,13 +153,13 @@ namespace SignatureScanner {
 
 			if constexpr (Relative)
 				if (auto bytes = detail::convertBytes<RelAddrType, Endianness>(iter, end))
-					if (doesRelativeMatch(bytes.value(), reinterpret_cast<std::uintptr_t>(&*iter)))
+					if (doesRelativeMatch(bytes.value(), reinterpret_cast<std::uintptr_t>(std::to_address(iter))))
 						return true;
 
 			return false;
 		}
 
-		[[nodiscard]] constexpr bool doesMatch(std::uintptr_t number, std::conditional_t<Relative, std::uintptr_t, std::monostate> location = {}) const
+		[[nodiscard]] constexpr bool doesMatch(std::uintptr_t number, std::uintptr_t location) const
 		{
 			if constexpr (Absolute)
 				if (doesAbsoluteMatch(number))
@@ -135,6 +186,7 @@ namespace SignatureScanner {
 			// There shouldn't be a need for this, so it is prevented here.
 			if (offset == 0)
 				return false;
+
 			return location + instructionLength + offset == address;
 		}
 	};

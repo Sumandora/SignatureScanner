@@ -1,11 +1,11 @@
 #include "SignatureScanner/PatternSignature.hpp"
 #include "SignatureScanner/XRefSignature.hpp"
 
-#include <gtest/gtest.h>
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <gtest/gtest.h>
 #include <iterator>
 #include <span>
 #include <string_view>
