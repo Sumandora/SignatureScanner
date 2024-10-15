@@ -1,41 +1,22 @@
 #ifndef SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 #define SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 
-#include "SignatureScanner/SignatureScanner.hpp"
+#include "SignatureScanner/detail/SignatureConcept.hpp"
+#include "SignatureScanner/detail/AllMixin.hpp"
+#include "SignatureScanner/detail/PatternParser.hpp"
 
 #include <algorithm>
 #include <array>
-#include <bit>
-#include <concepts>
 #include <cstddef>
-#include <cstdint>
 #include <iterator>
 #include <optional>
-#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 namespace SignatureScanner {
-	using InnerPatternElement = std::byte;
-	using PatternElement = std::optional<InnerPatternElement>;
-
 	namespace detail {
-		template <typename T>
-		constexpr auto patternCompare(const T& byte, const PatternElement& elem)
-		{
-			if (!elem.has_value())
-				return true;
-
-			if constexpr (std::equality_comparable_with<T, std::byte>) {
-				return elem.value() == byte;
-			} else if constexpr (requires() { std::bit_cast<std::byte>(byte); }) {
-				return elem.value() == std::bit_cast<std::byte>(byte);
-			} else {
-				static_assert(false, "T is not a byte(-like) type");
-			}
-		}
 
 		/**
 		 * This thing is pretty much useless outside of this use-case,
@@ -80,90 +61,18 @@ namespace SignatureScanner {
 		template <std::size_t N>
 		struct TemplateString : std::array<char, N> {
 			// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-			constexpr TemplateString(const char (&str)[N + 1])
+			constexpr TemplateString(const char (&str)[N])
 				: std::array<char, N>()
 			{
-				std::copy(std::begin(str), std::end(str) - 1, ArrayInserter(*this));
+				std::copy(std::begin(str), std::end(str), ArrayInserter(*this));
 			}
 		};
 
 		template <std::size_t N>
 		TemplateString(const char (&str)[N]) -> TemplateString<N - 1>;
-
-		constexpr uint8_t chrToHex(char c)
-		{
-			if ('0' <= c && c <= '9') {
-				return c - '0';
-			}
-			if ('A' <= c && c <= 'F') {
-				return c - 'A' + 10;
-			}
-			if ('a' <= c && c <= 'f') {
-				return c - 'a' + 10;
-			}
-			return 0;
-		}
-
-		constexpr uint8_t strToHex(std::string_view input)
-		{
-			uint8_t val = 0;
-			for (char c : input) {
-				val *= 16;
-				val += chrToHex(c);
-			}
-			return val;
-		}
-
-		template <detail::TemplateString String>
-		constexpr std::size_t countWords(char delimiter)
-		{
-			bool wasChar = false;
-
-			std::size_t count = 0;
-			for (char c : String) {
-				bool isChar = c != delimiter;
-				if (!wasChar && isChar)
-					count++;
-
-				wasChar = isChar;
-			}
-
-			return count;
-		}
-
-		constexpr PatternElement buildWord(std::string_view word, char wildcard)
-		{
-			if (std::ranges::all_of(word, [wildcard](char c) { return c == wildcard; }))
-				return std::nullopt;
-
-			return static_cast<InnerPatternElement>(strToHex(word));
-		}
-
-		template <std::ranges::input_range Range>
-			requires std::convertible_to<std::iter_value_t<std::ranges::iterator_t<Range>>, char>
-		constexpr void buildSignature(const Range& range, std::output_iterator<PatternElement> auto inserter, char delimiter, char wildcard)
-		{
-			std::string word;
-
-			std::size_t idx = 0;
-			for (char c : range)
-				if (c == delimiter) {
-					if (word.empty())
-						continue;
-
-					*inserter++ = buildWord(word, wildcard);
-					idx++;
-
-					word = "";
-				} else
-					word += c;
-
-			if (!word.empty())
-				*inserter++ = buildWord(word, wildcard);
-		}
 	}
 
-	class PatternSignature : public Signature {
+	class PatternSignature : public detail::AllMixin {
 	private:
 		std::vector<PatternElement> elements;
 
@@ -214,13 +123,29 @@ namespace SignatureScanner {
 		}
 	};
 
+	static_assert(detail::Signature<PatternSignature>);
+
 	const char DEFAULT_DELIMITER = ' ';
 	const char DEFAULT_WILDCARD = '?';
 
-	template <detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
+	template<detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
 	consteval auto buildBytePattern()
 	{
-		std::array<PatternElement, detail::countWords<String>(Delimiter)> signature;
+		static constexpr auto countWords = [] {
+			bool wasChar = false;
+
+			std::size_t count = 0;
+			for (char c : String) {
+				bool isChar = c != Delimiter;
+				if (!wasChar && isChar)
+					count++;
+
+				wasChar = isChar;
+			}
+
+			return count;
+		};
+		std::array<PatternElement, countWords()> signature;
 
 		detail::buildSignature(String, detail::ArrayInserter(signature), Delimiter, Wildcard);
 
@@ -245,10 +170,10 @@ namespace SignatureScanner {
 			if (String[i] == Wildcard)
 				signature[i] = std::nullopt;
 			else
-				signature[i] = static_cast<InnerPatternElement>(String[i]);
+				signature[i] = static_cast<std::byte>(String[i]);
 
 		if constexpr (IncludeTerminator)
-			signature[signature.size() - 1] = static_cast<InnerPatternElement>('\0');
+			signature[signature.size() - 1] = static_cast<std::byte>('\0');
 
 		return signature;
 	}
@@ -262,10 +187,10 @@ namespace SignatureScanner {
 			if (c == wildcard)
 				signature.emplace_back(std::nullopt);
 			else
-				signature.emplace_back(static_cast<InnerPatternElement>(c));
+				signature.emplace_back(static_cast<std::byte>(c));
 
 		if (includeTerminator)
-			signature.emplace_back(static_cast<InnerPatternElement>('\0'));
+			signature.emplace_back(static_cast<std::byte>('\0'));
 
 		return signature;
 	}

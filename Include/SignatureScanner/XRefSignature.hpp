@@ -1,7 +1,8 @@
 #ifndef SIGNATURESCANNER_XREFSIGNATURE_HPP
 #define SIGNATURESCANNER_XREFSIGNATURE_HPP
 
-#include "SignatureScanner/SignatureScanner.hpp"
+#include "SignatureScanner/detail/AllMixin.hpp"
+#include "SignatureScanner/detail/SignatureConcept.hpp"
 
 #include <array>
 #include <bit>
@@ -39,7 +40,7 @@ namespace SignatureScanner {
 	}
 
 	template <bool Relative = true, bool Absolute = true, std::endian Endianness = std::endian::native>
-	class XRefSignature : public Signature {
+	class XRefSignature : public detail::AllMixin {
 		static_assert(Relative || Absolute);
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
@@ -65,7 +66,6 @@ namespace SignatureScanner {
 		{
 		}
 
-	public:
 		template <std::input_iterator Iter>
 		[[nodiscard]] constexpr Iter next(Iter it, const std::sentinel_for<Iter> auto& end) const
 		{
@@ -138,6 +138,14 @@ namespace SignatureScanner {
 			return location + instructionLength + offset == address;
 		}
 	};
+
+	static_assert(detail::Signature<XRefSignature<true, true, std::endian::little>>);
+	static_assert(detail::Signature<XRefSignature<true, false, std::endian::little>>);
+	static_assert(detail::Signature<XRefSignature<false, true, std::endian::little>>);
+
+	static_assert(detail::Signature<XRefSignature<true, true, std::endian::big>>);
+	static_assert(detail::Signature<XRefSignature<true, false, std::endian::big>>);
+	static_assert(detail::Signature<XRefSignature<false, true, std::endian::big>>);
 }
 
 #endif

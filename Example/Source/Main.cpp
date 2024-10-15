@@ -29,7 +29,7 @@ std::span<std::uint8_t> bytesSpan{ bytes };
 
 TEST(BytePattern, Forwards)
 {
-	PatternSignature signature = buildBytePattern<"e4">();
+	PatternSignature signature = buildBytePattern("e4");
 	auto hit = signature.next(bytesSpan.begin(), bytesSpan.end());
 
 	EXPECT_NE(hit, bytesSpan.end());
@@ -39,7 +39,7 @@ TEST(BytePattern, Forwards)
 
 TEST(BytePattern, Backwards)
 {
-	PatternSignature signature = buildBytePattern<"e4">();
+	PatternSignature signature = buildBytePattern("e4");
 	auto hit = signature.prev(bytesSpan.rbegin(), bytesSpan.rend());
 
 	EXPECT_NE(hit, bytesSpan.rend());
@@ -49,7 +49,7 @@ TEST(BytePattern, Backwards)
 
 TEST(BytePattern, All)
 {
-	PatternSignature signature = buildBytePattern<"a9">();
+	PatternSignature signature = buildBytePattern("a9");
 	std::vector<decltype(bytesSpan)::iterator> hits;
 	signature.all(bytesSpan.begin(), bytesSpan.end(), std::back_inserter(hits));
 
@@ -64,8 +64,8 @@ std::string_view string = "The Answer to the Great Question Of Life, the Univers
 
 TEST(StringPattern, Forwards)
 {
-	PatternSignature signature = buildStringPattern<"Forty-two", false>();
-	// NOLINTNEXTLINE(llvm-qualified-auto)
+	PatternSignature signature = buildStringPattern("Forty-two", false);
+	// NOLINTNEXTLINE(llvm-qualified-auto, readability-qualified-auto)
 	auto hit = signature.next(string.begin(), string.end());
 
 	EXPECT_NE(hit, string.end());
@@ -75,7 +75,7 @@ TEST(StringPattern, Forwards)
 
 TEST(StringPattern, Backwards)
 {
-	PatternSignature signature = buildStringPattern<"Forty-two", false>();
+	PatternSignature signature = buildStringPattern("Forty-two", false);
 	auto hit = signature.prev(string.rbegin(), string.rend());
 
 	EXPECT_NE(hit, string.rend());
@@ -85,7 +85,7 @@ TEST(StringPattern, Backwards)
 
 TEST(StringPattern, All)
 {
-	PatternSignature signature = buildStringPattern<" ?? ", false>();
+	PatternSignature signature = buildStringPattern(" ?? ", false);
 	std::vector<decltype(string)::iterator> hits;
 	signature.all(string.begin(), string.end(), std::back_inserter(hits));
 
