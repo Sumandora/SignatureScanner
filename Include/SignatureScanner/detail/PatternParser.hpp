@@ -1,7 +1,6 @@
 #ifndef SIGNATURESCANNER_PATTERNPARSER_HPP
 #define SIGNATURESCANNER_PATTERNPARSER_HPP
 
-#include "SignatureScanner/PatternSignature.hpp"
 #include <algorithm>
 #include <concepts>
 #include <cstddef>
@@ -9,10 +8,8 @@
 #include <iterator>
 #include <optional>
 #include <ranges>
-#include <stdexcept>
 #include <string>
 #include <string_view>
-#include <type_traits>
 
 namespace SignatureScanner {
 	using PatternElement = std::optional<std::byte>;
