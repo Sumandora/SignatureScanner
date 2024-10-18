@@ -4,6 +4,7 @@
 #include "SignatureScanner/detail/SignatureConcept.hpp"
 #include "SignatureScanner/detail/AllMixin.hpp"
 #include "SignatureScanner/detail/PatternParser.hpp"
+#include "SignatureScanner/detail/ArrayInserter.hpp"
 
 #include <algorithm>
 #include <array>
@@ -17,47 +18,6 @@
 
 namespace SignatureScanner {
 	namespace detail {
-
-		/**
-		 * This thing is pretty much useless outside of this use-case,
-		 * because the array could be partially filled up when it is passed here,
-		 * for our use-case this doesn't matter.
-		 */
-		template <typename T, std::size_t N>
-		struct ArrayInserter {
-			using difference_type = std::ptrdiff_t;
-
-			std::array<T, N>* array;
-			std::size_t idx = 0;
-
-			constexpr explicit ArrayInserter(std::array<T, N>& array)
-				: array(&array)
-			{
-			}
-
-			constexpr ArrayInserter& operator=(T obj)
-			{
-				(*array)[idx] = obj;
-				return *this;
-			}
-
-			constexpr ArrayInserter& operator*()
-			{
-				return *this;
-			}
-			constexpr ArrayInserter& operator++()
-			{
-				idx++;
-				return *this;
-			}
-			constexpr ArrayInserter operator++(int)
-			{
-				ArrayInserter it = *this;
-				idx++;
-				return it;
-			}
-		};
-
 		template <std::size_t N>
 		struct TemplateString : std::array<char, N> {
 			// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
