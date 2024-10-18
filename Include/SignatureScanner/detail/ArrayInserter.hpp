@@ -1,8 +1,9 @@
-#ifndef SIGNATURESCANNER_ARRAYINSERTER_HPP
-#define SIGNATURESCANNER_ARRAYINSERTER_HPP
+#ifndef SIGNATURESCANNER_DETAIL_ARRAYINSERTER_HPP
+#define SIGNATURESCANNER_DETAIL_ARRAYINSERTER_HPP
 
 #include <array>
 #include <cstddef>
+
 namespace SignatureScanner::detail {
 	/**
 	 * This thing is pretty much useless outside of this use-case,
