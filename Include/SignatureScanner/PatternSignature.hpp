@@ -3,15 +3,14 @@
 
 #include "SignatureScanner/detail/SignatureConcept.hpp"
 #include "SignatureScanner/detail/AllMixin.hpp"
-#include "SignatureScanner/detail/PatternParser.hpp"
 #include "SignatureScanner/detail/ArrayInserter.hpp"
+#include "SignatureScanner/detail/PatternParser.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cstddef>
 #include <iterator>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -24,7 +23,7 @@ namespace SignatureScanner {
 			constexpr TemplateString(const char (&str)[N])
 				: std::array<char, N>()
 			{
-				std::copy(std::begin(str), std::end(str), ArrayInserter(*this));
+				std::ranges::copy(str, ArrayInserter(*this));
 			}
 		};
 
