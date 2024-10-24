@@ -23,7 +23,7 @@ namespace SignatureScanner {
 			for (std::size_t i = 0; i < sizeof(T); i++) {
 				if (iter == end)
 					return std::nullopt;
-				if constexpr (std::assignable_from<std::byte, std::iter_value_t<Iter>>) {
+				if constexpr (std::assignable_from<decltype(arr[i]), std::iter_value_t<Iter>>) {
 					arr[i] = *iter;
 				} else if constexpr (requires() { std::bit_cast<std::byte>(*iter); }) {
 					arr[i] = std::bit_cast<std::byte>(*iter);
