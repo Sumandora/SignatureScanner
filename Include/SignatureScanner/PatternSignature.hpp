@@ -1,38 +1,21 @@
 #ifndef SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 #define SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 
-#include "SignatureScanner/detail/SignatureConcept.hpp"
 #include "SignatureScanner/detail/AllMixin.hpp"
-#include "SignatureScanner/detail/ArrayInserter.hpp"
+#include "SignatureScanner/detail/PatternBuilder.hpp"
 #include "SignatureScanner/detail/PatternParser.hpp"
+#include "SignatureScanner/detail/SignatureConcept.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cstddef>
 #include <iterator>
-#include <optional>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 namespace SignatureScanner {
-	namespace detail {
-		template <std::size_t N>
-		struct TemplateString : std::array<char, N> {
-			// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-			constexpr TemplateString(const char (&str)[N])
-				: std::array<char, N>()
-			{
-				std::ranges::copy(str, ArrayInserter(*this));
-			}
-		};
-
-		template <std::size_t N>
-		TemplateString(const char (&str)[N]) -> TemplateString<N - 1>;
-	}
-
 	class PatternSignature : public detail::AllMixin {
-	private:
 		std::vector<PatternElement> elements;
 
 	public:
@@ -47,6 +30,36 @@ namespace SignatureScanner {
 		constexpr PatternSignature(const std::array<PatternElement, N>& elements)
 			: elements(elements.begin(), elements.end())
 		{
+		}
+
+		template <detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
+		static auto fromBytes()
+		{
+			constexpr auto pattern = detail::buildBytePattern<String, Delimiter, Wildcard>();
+
+			return PatternSignature{ pattern };
+		}
+
+		static auto fromBytes(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
+		{
+			auto pattern = detail::buildBytePattern(string, delimiter, wildcard);
+
+			return PatternSignature{ std::move(pattern) };
+		}
+
+		template <detail::TemplateString String, bool IncludeTerminator = true, char Wildcard = DEFAULT_WILDCARD>
+		static auto fromString()
+		{
+			constexpr auto pattern = detail::buildStringPattern<String, IncludeTerminator, Wildcard>();
+
+			return PatternSignature{ pattern };
+		}
+
+		static auto fromString(std::string_view string, bool includeTerminator = true, char wildcard = DEFAULT_WILDCARD)
+		{
+			auto pattern = detail::buildStringPattern(string, includeTerminator, wildcard);
+
+			return PatternSignature{ std::move(pattern) };
 		}
 
 		[[nodiscard]] constexpr const std::vector<PatternElement>& getElements() const { return elements; }
@@ -84,75 +97,6 @@ namespace SignatureScanner {
 
 	static_assert(detail::Signature<PatternSignature>);
 
-	const char DEFAULT_DELIMITER = ' ';
-	const char DEFAULT_WILDCARD = '?';
-
-	template<detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
-	consteval auto buildBytePattern()
-	{
-		static constexpr auto countWords = [] {
-			bool wasChar = false;
-
-			std::size_t count = 0;
-			for (char c : String) {
-				bool isChar = c != Delimiter;
-				if (!wasChar && isChar)
-					count++;
-
-				wasChar = isChar;
-			}
-
-			return count;
-		};
-		std::array<PatternElement, countWords()> signature;
-
-		detail::buildSignature(String, detail::ArrayInserter(signature), Delimiter, Wildcard);
-
-		return signature;
-	}
-
-	constexpr auto buildBytePattern(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
-	{
-		std::vector<PatternElement> signature;
-
-		detail::buildSignature(string, std::back_inserter(signature), delimiter, wildcard);
-
-		return signature;
-	}
-
-	template <detail::TemplateString String, bool IncludeTerminator = true, char Wildcard = DEFAULT_WILDCARD>
-	consteval auto buildStringPattern()
-	{
-		std::array<PatternElement, String.size() + (IncludeTerminator ? 1 : 0)> signature;
-
-		for (std::size_t i = 0; i < String.size(); i++)
-			if (String[i] == Wildcard)
-				signature[i] = std::nullopt;
-			else
-				signature[i] = static_cast<std::byte>(String[i]);
-
-		if constexpr (IncludeTerminator)
-			signature[signature.size() - 1] = static_cast<std::byte>('\0');
-
-		return signature;
-	}
-
-	constexpr auto buildStringPattern(std::string_view string, bool includeTerminator = true, char wildcard = DEFAULT_WILDCARD)
-	{
-		std::vector<PatternElement> signature;
-		signature.reserve(string.size() + (includeTerminator ? 1 : 0));
-
-		for (char c : string)
-			if (c == wildcard)
-				signature.emplace_back(std::nullopt);
-			else
-				signature.emplace_back(static_cast<std::byte>(c));
-
-		if (includeTerminator)
-			signature.emplace_back(static_cast<std::byte>('\0'));
-
-		return signature;
-	}
 }
 
 #endif
