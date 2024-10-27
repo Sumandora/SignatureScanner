@@ -19,28 +19,26 @@ namespace SignatureScanner {
 		std::vector<PatternElement> elements;
 
 	public:
-		// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-		constexpr PatternSignature(std::vector<PatternElement>&& elements)
+		explicit constexpr PatternSignature(std::vector<PatternElement>&& elements)
 			: elements(std::move(elements))
 		{
 		}
 
 		template <std::size_t N>
-		// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-		constexpr PatternSignature(const std::array<PatternElement, N>& elements)
+		explicit constexpr PatternSignature(const std::array<PatternElement, N>& elements)
 			: elements(elements.begin(), elements.end())
 		{
 		}
 
 		template <detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
-		static auto fromBytes()
+		static PatternSignature fromBytes()
 		{
 			constexpr auto pattern = detail::buildBytePattern<String, Delimiter, Wildcard>();
 
 			return PatternSignature{ pattern };
 		}
 
-		static auto fromBytes(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
+		static PatternSignature fromBytes(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
 		{
 			auto pattern = detail::buildBytePattern(string, delimiter, wildcard);
 
@@ -48,14 +46,14 @@ namespace SignatureScanner {
 		}
 
 		template <detail::TemplateString String, bool IncludeTerminator = true, char Wildcard = DEFAULT_WILDCARD>
-		static auto fromString()
+		static PatternSignature fromString()
 		{
 			constexpr auto pattern = detail::buildStringPattern<String, IncludeTerminator, Wildcard>();
 
 			return PatternSignature{ pattern };
 		}
 
-		static auto fromString(std::string_view string, bool includeTerminator = true, char wildcard = DEFAULT_WILDCARD)
+		static PatternSignature fromString(std::string_view string, bool includeTerminator = true, char wildcard = DEFAULT_WILDCARD)
 		{
 			auto pattern = detail::buildStringPattern(string, includeTerminator, wildcard);
 

@@ -39,11 +39,12 @@ namespace SignatureScanner {
 		}
 	}
 
-	template <bool Relative = true, bool Absolute = true, std::endian Endianness = std::endian::native>
+	template <bool Relative, bool Absolute, std::endian Endianness = std::endian::native>
 	class XRefSignature : public detail::AllMixin {
 		static_assert(Relative || Absolute);
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
+
 		const std::uintptr_t address;
 		[[no_unique_address]] const std::conditional_t<Relative, std::size_t, std::monostate> instructionLength;
 
