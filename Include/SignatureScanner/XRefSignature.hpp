@@ -16,7 +16,7 @@
 
 namespace SignatureScanner {
 	namespace detail {
-		template <typename T, std::endian Endianness, std::input_iterator Iter>
+		template <std::integral T, std::endian Endianness, std::input_iterator Iter>
 		constexpr std::optional<T> convertBytes(Iter iter, const std::sentinel_for<Iter> auto& end)
 		{
 			std::array<std::byte, sizeof(T)> arr;
