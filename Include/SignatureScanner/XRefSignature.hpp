@@ -16,7 +16,7 @@
 
 namespace SignatureScanner {
 	namespace detail {
-		template <std::integral T, std::endian Endianness, std::input_iterator Iter>
+		template <std::integral T, std::input_iterator Iter>
 		constexpr std::optional<T> convertBytes(Iter iter, const std::sentinel_for<Iter> auto& end)
 		{
 			std::array<std::byte, sizeof(T)> arr;
@@ -33,15 +33,16 @@ namespace SignatureScanner {
 				iter++;
 			}
 			T num = std::bit_cast<T>(arr);
-			if constexpr (Endianness != std::endian::native)
+			if constexpr (std::endian::little != std::endian::native)
 				num = std::byteswap(num);
 			return num;
 		}
 	}
 
-	template <bool Relative, bool Absolute, std::endian Endianness = std::endian::native>
+	template <bool Relative, bool Absolute>
 	class XRefSignature : public detail::AllMixin {
 		static_assert(Relative || Absolute);
+		static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big, "Mixed endian is not supported");
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
 
@@ -97,12 +98,12 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
 		{
 			if constexpr (Absolute)
-				if (auto bytes = detail::convertBytes<std::uintptr_t, Endianness>(iter, end))
+				if (auto bytes = detail::convertBytes<std::uintptr_t>(iter, end))
 					if (doesAbsoluteMatch(bytes.value()))
 						return true;
 
 			if constexpr (Relative)
-				if (auto bytes = detail::convertBytes<RelAddrType, Endianness>(iter, end))
+				if (auto bytes = detail::convertBytes<RelAddrType>(iter, end))
 					if (doesRelativeMatch(bytes.value(), reinterpret_cast<std::uintptr_t>(&*iter)))
 						return true;
 
@@ -140,13 +141,9 @@ namespace SignatureScanner {
 		}
 	};
 
-	static_assert(detail::Signature<XRefSignature<true, true, std::endian::little>>);
-	static_assert(detail::Signature<XRefSignature<true, false, std::endian::little>>);
-	static_assert(detail::Signature<XRefSignature<false, true, std::endian::little>>);
-
-	static_assert(detail::Signature<XRefSignature<true, true, std::endian::big>>);
-	static_assert(detail::Signature<XRefSignature<true, false, std::endian::big>>);
-	static_assert(detail::Signature<XRefSignature<false, true, std::endian::big>>);
+	static_assert(detail::Signature<XRefSignature<true, true>>);
+	static_assert(detail::Signature<XRefSignature<true, false>>);
+	static_assert(detail::Signature<XRefSignature<false, true>>);
 }
 
 #endif
