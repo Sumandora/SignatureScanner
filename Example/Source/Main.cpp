@@ -177,7 +177,7 @@ TEST(XRefPattern, AbsoluteForwards)
 {
 	initXRefArray();
 
-	auto signature = XRefSignature<false, true>{ target };
+	auto signature = XRefSignature{ true, false, target };
 	auto hit = signature.next(absoluteRef.begin(), absoluteRef.end());
 
 	EXPECT_NE(hit, absoluteRef.end());
@@ -189,7 +189,7 @@ TEST(XRefPattern, RelativeForwards)
 {
 	initXRefArray();
 
-	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
+	auto signature = XRefSignature{ false, true, reinterpret_cast<std::uintptr_t>(&target) };
 	auto hit = signature.next(relativeRef.begin(), relativeRef.end());
 
 	EXPECT_NE(hit, relativeRef.end());
@@ -201,7 +201,7 @@ TEST(XRefPattern, AbsoluteBackwards)
 {
 	initXRefArray();
 
-	auto signature = XRefSignature<false, true>{ target };
+	auto signature = XRefSignature{ true, false, target };
 	auto hit = signature.prev(absoluteRef.rbegin(), absoluteRef.rend());
 
 	EXPECT_NE(hit, absoluteRef.rend());
@@ -213,7 +213,7 @@ TEST(XRefPattern, RelativeBackwards)
 {
 	initXRefArray();
 
-	auto signature = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
+	auto signature = XRefSignature{ false, true, reinterpret_cast<std::uintptr_t>(&target) };
 	auto hit = signature.prev(relativeRef.rbegin(), relativeRef.rend());
 
 	EXPECT_NE(hit, relativeRef.rend());
@@ -225,8 +225,8 @@ TEST(XRefPattern, All)
 {
 	initXRefArray();
 
-	auto absoluteSig = XRefSignature<false, true>{ target };
-	auto relativeSig = XRefSignature<true, false>{ reinterpret_cast<std::uintptr_t>(&target) };
+	auto absoluteSig = XRefSignature{ true, false, target };
+	auto relativeSig = XRefSignature{ false, true, reinterpret_cast<std::uintptr_t>(&target) };
 	std::vector<decltype(absoluteRef)::iterator> hits;
 	absoluteSig.all(absoluteRef.begin(), absoluteRef.end(), std::back_inserter(hits));
 	relativeSig.all(relativeRef.begin(), relativeRef.end(), std::back_inserter(hits));

@@ -1,8 +1,8 @@
 #ifndef SIGNATURESCANNER_DETAIL_PATTERNCREATOR_HPP
 #define SIGNATURESCANNER_DETAIL_PATTERNCREATOR_HPP
 
-#include "SignatureScanner/detail/ArrayInserter.hpp"
-#include "SignatureScanner/detail/PatternParser.hpp"
+#include "ArrayInserter.hpp"
+#include "PatternParser.hpp"
 
 #include <algorithm>
 #include <array>

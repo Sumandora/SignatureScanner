@@ -1,10 +1,10 @@
 #ifndef SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 #define SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 
-#include "SignatureScanner/detail/AllMixin.hpp"
-#include "SignatureScanner/detail/PatternBuilder.hpp"
-#include "SignatureScanner/detail/PatternParser.hpp"
-#include "SignatureScanner/detail/SignatureConcept.hpp"
+#include "detail/AllMixin.hpp"
+#include "detail/PatternBuilder.hpp"
+#include "detail/PatternParser.hpp"
+#include "detail/SignatureConcept.hpp"
 
 #include <algorithm>
 #include <array>

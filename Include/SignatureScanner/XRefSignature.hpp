@@ -1,44 +1,34 @@
 #ifndef SIGNATURESCANNER_XREFSIGNATURE_HPP
 #define SIGNATURESCANNER_XREFSIGNATURE_HPP
 
-#include "SignatureScanner/detail/AllMixin.hpp"
-#include "SignatureScanner/detail/SignatureConcept.hpp"
 #include "detail/ByteConverter.hpp"
+#include "detail/AllMixin.hpp"
+#include "detail/SignatureConcept.hpp"
 
 #include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <type_traits>
-#include <variant>
 
 namespace SignatureScanner {
-	template <bool Relative, bool Absolute>
 	class XRefSignature : public detail::AllMixin {
-		static_assert(Relative || Absolute);
 		static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big, "Mixed endian is not supported");
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
 
 		const std::uintptr_t address;
-		[[no_unique_address]] const std::conditional_t<Relative, std::size_t, std::monostate> instructionLength;
+		const bool absolute;
+		union { // if instructionLength == 0 then relative search is disabled
+			const bool relative;
+			const std::uint8_t instructionLength;
+		};
 
 	public:
-		explicit constexpr XRefSignature(std::uintptr_t address, std::size_t instructionLength)
-			requires Relative
+		explicit constexpr XRefSignature(bool absolute, bool relative, std::uintptr_t address, std::uint8_t instructionLength = 4)
 			: address(address)
-			, instructionLength(instructionLength)
-		{
-		}
-
-		explicit constexpr XRefSignature(std::uintptr_t address)
-			: address(address)
-			, instructionLength([] {
-				if constexpr (Relative)
-					return sizeof(RelAddrType);
-				else
-					return decltype(instructionLength){};
-			}())
+			, absolute(absolute)
+			, instructionLength(relative ? instructionLength : static_cast<std::uint8_t>(false))
 		{
 		}
 
@@ -71,12 +61,12 @@ namespace SignatureScanner {
 		template <std::input_iterator Iter>
 		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
 		{
-			if constexpr (Absolute)
+			if (isAbsolute())
 				if (auto bytes = detail::convertBytes<std::uintptr_t>(iter, end))
 					if (doesAbsoluteMatch(bytes.value()))
 						return true;
 
-			if constexpr (Relative)
+			if (isRelative())
 				if (auto bytes = detail::convertBytes<RelAddrType>(iter, end))
 					if (doesRelativeMatch(bytes.value(), reinterpret_cast<std::uintptr_t>(&*iter)))
 						return true;
@@ -84,27 +74,35 @@ namespace SignatureScanner {
 			return false;
 		}
 
-		[[nodiscard]] constexpr bool doesMatch(std::uintptr_t number, std::conditional_t<Relative, std::uintptr_t, std::monostate> location = {}) const
+		[[nodiscard]] constexpr bool doesMatch(std::uintptr_t number, std::uintptr_t location) const
 		{
-			if constexpr (Absolute)
+			if (isAbsolute())
 				if (doesAbsoluteMatch(number))
 					return true;
 
-			if constexpr (Relative)
+			if (isRelative())
 				if (doesRelativeMatch(static_cast<RelAddrType>(number), location))
 					return true;
 
 			return false;
 		}
 
+		[[nodiscard]] constexpr bool isAbsolute() const
+		{
+			return absolute;
+		}
+
+		[[nodiscard]] constexpr bool isRelative() const
+		{
+			return relative;
+		}
+
 		[[nodiscard]] constexpr bool doesAbsoluteMatch(std::uintptr_t number) const
-			requires Absolute
 		{
 			return number == address;
 		}
 
 		[[nodiscard]] constexpr bool doesRelativeMatch(RelAddrType offset, std::uintptr_t location) const
-			requires Relative
 		{
 			// This is special, when the address has 0x00 bytes in front of it, then offset is zero,
 			// so location + instructionLength + 0. This usually happens when XRefs are searched in data sections.
@@ -115,9 +113,7 @@ namespace SignatureScanner {
 		}
 	};
 
-	static_assert(detail::Signature<XRefSignature<true, true>>);
-	static_assert(detail::Signature<XRefSignature<true, false>>);
-	static_assert(detail::Signature<XRefSignature<false, true>>);
+	static_assert(detail::Signature<XRefSignature>);
 }
 
 #endif
