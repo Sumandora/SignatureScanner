@@ -19,16 +19,13 @@ namespace SignatureScanner {
 
 		const std::uintptr_t address;
 		const bool absolute;
-		union { // if instructionLength == 0 then relative search is disabled
-			const bool relative;
-			const std::uint8_t instructionLength;
-		};
+		const std::uint8_t instructionLength; // if instructionLength == 0 then relative search is disabled
 
 	public:
 		explicit constexpr XRefSignature(bool absolute, bool relative, std::uintptr_t address, std::uint8_t instructionLength = 4)
 			: address(address)
 			, absolute(absolute)
-			, instructionLength(relative ? instructionLength : static_cast<std::uint8_t>(false))
+			, instructionLength(relative ? instructionLength : 0)
 		{
 		}
 
@@ -94,7 +91,7 @@ namespace SignatureScanner {
 
 		[[nodiscard]] constexpr bool isRelative() const
 		{
-			return relative;
+			return instructionLength > 0;
 		}
 
 		[[nodiscard]] constexpr bool doesAbsoluteMatch(std::uintptr_t number) const
