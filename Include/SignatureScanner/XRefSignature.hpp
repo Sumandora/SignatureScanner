@@ -1,17 +1,60 @@
 #ifndef SIGNATURESCANNER_XREFSIGNATURE_HPP
 #define SIGNATURESCANNER_XREFSIGNATURE_HPP
 
-#include "detail/ByteConverter.hpp"
 #include "detail/AllMixin.hpp"
+#include "detail/ByteConverter.hpp"
 #include "detail/SignatureConcept.hpp"
 
 #include <bit>
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <type_traits>
 
 namespace SignatureScanner {
+	class XRefTypes : public std::bitset<2> {
+		enum Index : std::uint8_t {
+			RELATIVE = 0,
+			ABSOLUTE = 1
+		};
+
+	public:
+		constexpr bool isRelative() const
+		{
+			return test(RELATIVE);
+		}
+
+		constexpr bool isAbsolute() const
+		{
+			return test(ABSOLUTE);
+		}
+
+		constexpr static XRefTypes relative()
+		{
+			XRefTypes types;
+			types.set(RELATIVE, true);
+			types.set(ABSOLUTE, false);
+			return types;
+		}
+
+		constexpr static XRefTypes absolute()
+		{
+			XRefTypes types;
+			types.set(RELATIVE, false);
+			types.set(ABSOLUTE, true);
+			return types;
+		}
+
+		constexpr static XRefTypes relativeAndAbsolute()
+		{
+			XRefTypes types;
+			types.set(RELATIVE, true);
+			types.set(ABSOLUTE, true);
+			return types;
+		}
+	};
+
 	class XRefSignature : public detail::AllMixin {
 		static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big, "Mixed endian is not supported");
 
@@ -22,10 +65,10 @@ namespace SignatureScanner {
 		const std::uint8_t instructionLength; // if instructionLength == 0 then relative search is disabled
 
 	public:
-		explicit constexpr XRefSignature(bool absolute, bool relative, std::uintptr_t address, std::uint8_t instructionLength = 4)
+		explicit constexpr XRefSignature(XRefTypes types, std::uintptr_t address, std::uint8_t instructionLength = 4)
 			: address(address)
-			, absolute(absolute)
-			, instructionLength(relative ? instructionLength : 0)
+			, absolute(types.isAbsolute())
+			, instructionLength(types.isRelative() ? instructionLength : 0)
 		{
 		}
 
