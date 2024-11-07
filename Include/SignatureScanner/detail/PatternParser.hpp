@@ -68,14 +68,12 @@ namespace SignatureScanner {
 		{
 			std::string word;
 
-			std::size_t idx = 0;
 			for (char c : range)
 				if (c == delimiter) {
 					if (word.empty())
 						continue;
 
 					*inserter++ = buildWord(word, wildcard);
-					idx++;
 
 					word = "";
 				} else

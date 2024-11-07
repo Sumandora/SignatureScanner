@@ -16,7 +16,7 @@ namespace SignatureScanner::detail {
 	{
 		T num;
 		if constexpr (std::contiguous_iterator<Iter> && sizeof(std::iter_value_t<Iter>) == 1) {
-			if(std::distance(iter, end) < sizeof(T))
+			if(std::distance(iter, end) < static_cast<std::iter_difference_t<Iter>>(sizeof(T)))
 				return std::nullopt;
 			std::memcpy(&num, std::to_address(iter), sizeof(T));
 		} else {
