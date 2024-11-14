@@ -74,8 +74,9 @@ namespace SignatureScanner {
 		{
 			auto match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<std::iter_value_t<Iter>>).end();
 
-			// This match will be one-after-the-end of the pattern, for consistency we need the first byte (from the beginning).
-			match--;
+			if(match != end)
+				// This match will be one-after-the-end of the pattern, for consistency we need the first byte (from the beginning).
+				match--;
 
 			return match;
 		}
