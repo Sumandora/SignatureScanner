@@ -66,11 +66,12 @@ namespace SignatureScanner {
 		{
 			std::array<PatternElement, String.size() + (IncludeTerminator ? 1 : 0)> signature;
 
-			for (std::size_t i = 0; i < String.size(); i++)
+			for (std::size_t i = 0; i < String.size(); i++) {
 				if (String[i] == Wildcard)
 					signature[i] = std::nullopt;
 				else
 					signature[i] = static_cast<std::byte>(String[i]);
+			}
 
 			if constexpr (IncludeTerminator)
 				signature[signature.size() - 1] = static_cast<std::byte>('\0');

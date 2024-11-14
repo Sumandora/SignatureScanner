@@ -2,6 +2,7 @@
 #include "SignatureScanner/XRefSignature.hpp"
 
 #include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -13,7 +14,7 @@
 
 using namespace SignatureScanner;
 
-std::uint8_t bytes[]{
+static std::uint8_t bytes[]{
 	0x68, 0x74, 0x16, 0xcd, 0xaa, 0xe3, 0x6, 0x95, 0xcb, 0xeb, 0xe7,
 	0x64, 0x1e, 0xbb, 0x5a, 0xf2, 0x65, 0xe5, 0x53, 0x85, 0xb8,
 	0xfe, 0xb4, 0x3f, 0xb4, 0x38, 0x3a, 0x1a, 0xc4, 0x5f, 0x00,
@@ -25,31 +26,31 @@ std::uint8_t bytes[]{
 	0xad, 0xaf, 0x7c, 0x8, 0xee, 0xca, 0xdf, 0xdb, 0x2c, 0x76,
 	0xa9, 0x49, 0xb8, 0xf5, 0xcd, 0x4d, 0xa9, 0x14, 0xc0, 0xaf
 };
-std::span<std::uint8_t> bytesSpan{ bytes };
+static std::span<std::uint8_t> bytesSpan{ bytes };
 
 TEST(BytePattern, Forwards)
 {
-	PatternSignature signature = PatternSignature::fromBytes<"e4">();
+	const PatternSignature signature = PatternSignature::fromBytes<"e4">();
 	auto hit = signature.next(bytesSpan.begin(), bytesSpan.end());
 
 	EXPECT_NE(hit, bytesSpan.end());
-	std::size_t offset = std::distance(bytesSpan.begin(), hit);
+	const std::size_t offset = std::distance(bytesSpan.begin(), hit);
 	EXPECT_EQ(offset, 42);
 }
 
 TEST(BytePattern, Backwards)
 {
-	PatternSignature signature = PatternSignature::fromBytes<"e4">();
+	const PatternSignature signature = PatternSignature::fromBytes<"e4">();
 	auto hit = signature.prev(bytesSpan.rbegin(), bytesSpan.rend());
 
 	EXPECT_NE(hit, bytesSpan.rend());
-	std::size_t offset = std::distance(bytesSpan.rbegin(), hit);
+	const std::size_t offset = std::distance(bytesSpan.rbegin(), hit);
 	EXPECT_EQ(offset, 26);
 }
 
 TEST(BytePattern, All)
 {
-	PatternSignature signature = PatternSignature::fromBytes<"a9">();
+	const PatternSignature signature = PatternSignature::fromBytes<"a9">();
 	std::vector<decltype(bytesSpan)::iterator> hits;
 	signature.all(bytesSpan.begin(), bytesSpan.end(), std::back_inserter(hits));
 
@@ -60,32 +61,32 @@ TEST(BytePattern, All)
 }
 
 // NOLINTNEXTLINE(cert-err58-cpp)
-std::string_view string = "The Answer to the Great Question Of Life, the Universe and Everything Is Forty-two";
+static std::string_view string = "The Answer to the Great Question Of Life, the Universe and Everything Is Forty-two";
 
 TEST(StringPattern, Forwards)
 {
-	PatternSignature signature = PatternSignature::fromString<"Forty-two", false>();
+	const PatternSignature signature = PatternSignature::fromString<"Forty-two", false>();
 	// NOLINTNEXTLINE(llvm-qualified-auto, readability-qualified-auto)
 	auto hit = signature.next(string.begin(), string.end());
 
 	EXPECT_NE(hit, string.end());
-	std::size_t offset = std::distance(string.begin(), hit);
+	const std::size_t offset = std::distance(string.begin(), hit);
 	EXPECT_EQ(offset, 73);
 }
 
 TEST(StringPattern, Backwards)
 {
-	PatternSignature signature = PatternSignature::fromString<"Forty-two", false>();
+	const PatternSignature signature = PatternSignature::fromString<"Forty-two", false>();
 	auto hit = signature.prev(string.rbegin(), string.rend());
 
 	EXPECT_NE(hit, string.rend());
-	std::size_t offset = std::distance(string.rbegin(), hit);
+	const std::size_t offset = std::distance(string.rbegin(), hit);
 	EXPECT_EQ(offset, 8);
 }
 
 TEST(StringPattern, All)
 {
-	PatternSignature signature = PatternSignature::fromString<" ?? ", false>();
+	const PatternSignature signature = PatternSignature::fromString<" ?? ", false>();
 	std::vector<decltype(string)::iterator> hits;
 	signature.all(string.begin(), string.end(), std::back_inserter(hits));
 
@@ -95,9 +96,9 @@ TEST(StringPattern, All)
 	EXPECT_EQ(std::distance(string.begin(), hits[2]), 69);
 }
 
-std::uintptr_t target = 0x13371337;
+static std::uintptr_t target = 0x13371337;
 
-std::uint8_t absoluteXRef[]{
+static std::uint8_t absoluteXRef[]{
 	0xFF,
 	0xFF,
 	0xFF,
@@ -128,7 +129,7 @@ std::uint8_t absoluteXRef[]{
 	0xFF,
 };
 
-std::uint8_t relativeXRef[]{
+static std::uint8_t relativeXRef[]{
 	0xFF,
 	0xFF,
 	0xFF,
@@ -155,18 +156,18 @@ std::uint8_t relativeXRef[]{
 	0xFF,
 };
 
-std::span<std::uint8_t> absoluteRef{ absoluteXRef };
-std::span<std::uint8_t> relativeRef{ relativeXRef };
+static std::span<std::uint8_t> absoluteRef{ absoluteXRef };
+static std::span<std::uint8_t> relativeRef{ relativeXRef };
 
-void initXRefArray()
+static void initXRefArray()
 {
-	std::size_t offset = 8;
+	const std::size_t offset = 8;
 
 	memcpy(absoluteXRef + offset, &target, sizeof(void*));
 
 	auto base = reinterpret_cast<std::uintptr_t>(relativeXRef + offset + 4);
 	auto pTarget = reinterpret_cast<std::uintptr_t>(&target);
-	std::size_t distance = std::max(pTarget, base) - std::min(pTarget, base);
+	const std::size_t distance = std::max(pTarget, base) - std::min(pTarget, base);
 	auto jmpTarget = static_cast<std::int32_t>(distance);
 	if (base > pTarget)
 		jmpTarget *= -1;
@@ -181,7 +182,7 @@ TEST(XRefPattern, AbsoluteForwards)
 	auto hit = signature.next(absoluteRef.begin(), absoluteRef.end());
 
 	EXPECT_NE(hit, absoluteRef.end());
-	std::size_t offset = std::distance(absoluteRef.begin(), hit);
+	const std::size_t offset = std::distance(absoluteRef.begin(), hit);
 	EXPECT_EQ(offset, 8);
 }
 
@@ -193,7 +194,7 @@ TEST(XRefPattern, RelativeForwards)
 	auto hit = signature.next(relativeRef.begin(), relativeRef.end());
 
 	EXPECT_NE(hit, relativeRef.end());
-	std::size_t offset = std::distance(relativeRef.begin(), hit);
+	const std::size_t offset = std::distance(relativeRef.begin(), hit);
 	EXPECT_EQ(offset, 8);
 }
 
@@ -205,7 +206,7 @@ TEST(XRefPattern, AbsoluteBackwards)
 	auto hit = signature.prev(absoluteRef.rbegin(), absoluteRef.rend());
 
 	EXPECT_NE(hit, absoluteRef.rend());
-	std::size_t offset = std::distance(absoluteRef.rbegin(), hit);
+	const std::size_t offset = std::distance(absoluteRef.rbegin(), hit);
 	EXPECT_EQ(offset, 15);
 }
 
@@ -217,7 +218,7 @@ TEST(XRefPattern, RelativeBackwards)
 	auto hit = signature.prev(relativeRef.rbegin(), relativeRef.rend());
 
 	EXPECT_NE(hit, relativeRef.rend());
-	std::size_t offset = std::distance(relativeRef.rbegin(), hit);
+	const std::size_t offset = std::distance(relativeRef.rbegin(), hit);
 	EXPECT_EQ(offset, 11);
 }
 

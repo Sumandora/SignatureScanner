@@ -20,12 +20,12 @@ namespace SignatureScanner {
 		};
 
 	public:
-		constexpr bool isRelative() const
+		[[nodiscard]] constexpr bool isRelative() const
 		{
 			return test(RELATIVE);
 		}
 
-		constexpr bool isAbsolute() const
+		[[nodiscard]] constexpr bool isAbsolute() const
 		{
 			return test(ABSOLUTE);
 		}

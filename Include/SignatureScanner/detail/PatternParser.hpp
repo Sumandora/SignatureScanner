@@ -47,7 +47,7 @@ namespace SignatureScanner {
 		constexpr uint8_t strToHex(std::string_view input)
 		{
 			uint8_t val = 0;
-			for (char c : input) {
+			for (const char c : input) {
 				val *= 16;
 				val += chrToHex(c);
 			}
