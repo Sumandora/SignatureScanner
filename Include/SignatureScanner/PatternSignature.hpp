@@ -10,6 +10,7 @@
 #include <array>
 #include <cstddef>
 #include <iterator>
+#include <memory>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -63,18 +64,44 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr const std::vector<PatternElement>& getElements() const { return elements; }
 		[[nodiscard]] constexpr std::size_t getLength() const { return elements.size(); }
 
-		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr Iter next(const Iter& begin, const std::sentinel_for<Iter> auto& end) const
+	private:
+#ifdef SIGNATURESCANNER_OPTIMIZE
+		const std::byte* optimizedNext(const std::byte* begin, const std::byte* end) const;
+		const std::byte* optimizedPrev(const std::byte* begin, const std::byte* end) const;
+#endif
+
+	public:
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter next(const Iter& begin, const Sent& end) const
 		{
+#ifdef SIGNATURESCANNER_OPTIMIZE
+			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
+				const auto* beginPtr = reinterpret_cast<const std::byte*>(std::to_address(begin));
+				const auto* endPtr = reinterpret_cast<const std::byte*>(std::to_address(end));
+
+				auto matchDist = optimizedNext(beginPtr, endPtr) - beginPtr;
+				return std::next(begin, matchDist);
+			}
+#endif
 			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<std::iter_value_t<Iter>>).begin();
 		}
 
-		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr Iter prev(const Iter& begin, const std::sentinel_for<Iter> auto& end) const
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter prev(const Iter& begin, const Sent& end) const
 		{
-			auto match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<std::iter_value_t<Iter>>).end();
+			Iter match;
+#ifdef SIGNATURESCANNER_OPTIMIZE
+			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
+				const auto* beginPtr = reinterpret_cast<const std::byte*>(std::to_address(begin));
+				const auto* endPtr = reinterpret_cast<const std::byte*>(std::to_address(end));
 
-			if(match != end)
+				auto matchDist = optimizedPrev(beginPtr, endPtr) - beginPtr;
+				match = std::next(begin, matchDist);
+			} else
+#endif
+				match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<std::iter_value_t<Iter>>).end();
+
+			if (match != end)
 				// This match will be one-after-the-end of the pattern, for consistency we need the first byte (from the beginning).
 				match--;
 

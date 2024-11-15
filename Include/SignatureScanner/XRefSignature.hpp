@@ -72,9 +72,25 @@ namespace SignatureScanner {
 		{
 		}
 
-		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr Iter next(Iter it, const std::sentinel_for<Iter> auto& end) const
+	private:
+#ifdef SIGNATURESCANNER_OPTIMIZE
+		const std::byte* optimizedNext(const std::byte* it, const std::byte* end) const;
+		const std::byte* optimizedPrev(const std::byte* it, const std::byte* end) const;
+#endif
+
+	public:
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter next(Iter it, const Sent& end) const
 		{
+#ifdef SIGNATURESCANNER_OPTIMIZE
+			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
+				const auto* itPtr = reinterpret_cast<const std::byte*>(std::to_address(it));
+				const auto* endPtr = reinterpret_cast<const std::byte*>(std::to_address(end));
+
+				auto matchDist = optimizedNext(itPtr, endPtr) - itPtr;
+				return std::next(it, matchDist);
+			}
+#endif
 			for (; it != end; it++)
 				if (doesMatch(it, end))
 					return it;
@@ -82,9 +98,18 @@ namespace SignatureScanner {
 			return it;
 		}
 
-		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr Iter prev(Iter it, const std::sentinel_for<Iter> auto& end) const
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter prev(Iter it, const Sent& end) const
 		{
+#ifdef SIGNATURESCANNER_OPTIMIZE
+			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
+				const auto* itPtr = reinterpret_cast<const std::byte*>(std::to_address(it));
+				const auto* endPtr = reinterpret_cast<const std::byte*>(std::to_address(end));
+
+				auto matchDist = optimizedPrev(itPtr, endPtr) - itPtr;
+				return std::next(it, matchDist);
+			}
+#endif
 			for (; it != end; it++) {
 				// Regarding the "- 1":
 				// For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1)
