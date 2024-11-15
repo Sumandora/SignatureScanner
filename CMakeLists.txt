@@ -7,7 +7,7 @@ project(SignatureScanner)
 option(
 	SIGNATURESCANNER_OPTIMIZE
 	"Adds optimized translation units, which contain optimized versions of search functions. A side-effect is that the library is no longer header only."
-	ON)
+	OFF)
 set(SIGNATURESCANNER_OPTIMIZE_FLAGS "-O3" CACHE STRING "Specifies the flags used to optimize the translation units")
 
 if(SIGNATURESCANNER_OPTIMIZE)
