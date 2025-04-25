@@ -11,6 +11,7 @@ namespace SignatureScanner::detail {
 	 */
 	template <typename T, std::size_t N>
 	struct ArrayInserter {
+		// NOLINTNEXTLINE(readability-identifier-naming)
 		using difference_type = std::ptrdiff_t;
 
 		std::array<T, N>* array;

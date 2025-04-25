@@ -26,38 +26,38 @@ static std::uint8_t bytes[]{
 	0xad, 0xaf, 0x7c, 0x8, 0xee, 0xca, 0xdf, 0xdb, 0x2c, 0x76,
 	0xa9, 0x49, 0xb8, 0xf5, 0xcd, 0x4d, 0xa9, 0x14, 0xc0, 0xaf
 };
-static std::span<std::uint8_t> bytesSpan{ bytes };
+static std::span<std::uint8_t> bytes_span{ bytes };
 
 TEST(BytePattern, Forwards)
 {
-	const PatternSignature signature = PatternSignature::fromBytes<"e4">();
-	auto hit = signature.next(bytesSpan.begin(), bytesSpan.end());
+	const PatternSignature signature = PatternSignature::from_bytes<"e4">();
+	auto hit = signature.next(bytes_span.begin(), bytes_span.end());
 
-	EXPECT_NE(hit, bytesSpan.end());
-	const std::size_t offset = std::distance(bytesSpan.begin(), hit);
+	EXPECT_NE(hit, bytes_span.end());
+	const std::size_t offset = std::distance(bytes_span.begin(), hit);
 	EXPECT_EQ(offset, 42);
 }
 
 TEST(BytePattern, Backwards)
 {
-	const PatternSignature signature = PatternSignature::fromBytes<"e4">();
-	auto hit = signature.prev(bytesSpan.rbegin(), bytesSpan.rend());
+	const PatternSignature signature = PatternSignature::from_bytes<"e4">();
+	auto hit = signature.prev(bytes_span.rbegin(), bytes_span.rend());
 
-	EXPECT_NE(hit, bytesSpan.rend());
-	const std::size_t offset = std::distance(bytesSpan.rbegin(), hit);
+	EXPECT_NE(hit, bytes_span.rend());
+	const std::size_t offset = std::distance(bytes_span.rbegin(), hit);
 	EXPECT_EQ(offset, 26);
 }
 
 TEST(BytePattern, All)
 {
-	const PatternSignature signature = PatternSignature::fromBytes<"a9">();
-	std::vector<decltype(bytesSpan)::iterator> hits;
-	signature.all(bytesSpan.begin(), bytesSpan.end(), std::back_inserter(hits));
+	const PatternSignature signature = PatternSignature::from_bytes<"a9">();
+	std::vector<decltype(bytes_span)::iterator> hits;
+	signature.all(bytes_span.begin(), bytes_span.end(), std::back_inserter(hits));
 
 	EXPECT_EQ(hits.size(), 3);
-	EXPECT_EQ(std::distance(bytesSpan.begin(), hits[0]), 51);
-	EXPECT_EQ(std::distance(bytesSpan.begin(), hits[1]), 91);
-	EXPECT_EQ(std::distance(bytesSpan.begin(), hits[2]), 97);
+	EXPECT_EQ(std::distance(bytes_span.begin(), hits[0]), 51);
+	EXPECT_EQ(std::distance(bytes_span.begin(), hits[1]), 91);
+	EXPECT_EQ(std::distance(bytes_span.begin(), hits[2]), 97);
 }
 
 // NOLINTNEXTLINE(cert-err58-cpp)
@@ -65,7 +65,7 @@ static std::string_view string = "The Answer to the Great Question Of Life, the 
 
 TEST(StringPattern, Forwards)
 {
-	const PatternSignature signature = PatternSignature::fromString<"Forty-two", false>();
+	const PatternSignature signature = PatternSignature::from_string<"Forty-two", false>();
 	// NOLINTNEXTLINE(llvm-qualified-auto, readability-qualified-auto)
 	auto hit = signature.next(string.begin(), string.end());
 
@@ -76,7 +76,7 @@ TEST(StringPattern, Forwards)
 
 TEST(StringPattern, Backwards)
 {
-	const PatternSignature signature = PatternSignature::fromString<"Forty-two", false>();
+	const PatternSignature signature = PatternSignature::from_string<"Forty-two", false>();
 	auto hit = signature.prev(string.rbegin(), string.rend());
 
 	EXPECT_NE(hit, string.rend());
@@ -86,7 +86,7 @@ TEST(StringPattern, Backwards)
 
 TEST(StringPattern, All)
 {
-	const PatternSignature signature = PatternSignature::fromString<" ?? ", false>();
+	const PatternSignature signature = PatternSignature::from_string<" ?? ", false>();
 	std::vector<decltype(string)::iterator> hits;
 	signature.all(string.begin(), string.end(), std::back_inserter(hits));
 
@@ -98,7 +98,7 @@ TEST(StringPattern, All)
 
 static std::uintptr_t target = 0x13371337;
 
-static std::uint8_t absoluteXRef[]{
+static std::uint8_t absolute_xref[]{
 	0xFF,
 	0xFF,
 	0xFF,
@@ -129,7 +129,7 @@ static std::uint8_t absoluteXRef[]{
 	0xFF,
 };
 
-static std::uint8_t relativeXRef[]{
+static std::uint8_t relative_xref[]{
 	0xFF,
 	0xFF,
 	0xFF,
@@ -156,83 +156,83 @@ static std::uint8_t relativeXRef[]{
 	0xFF,
 };
 
-static std::span<std::uint8_t> absoluteRef{ absoluteXRef };
-static std::span<std::uint8_t> relativeRef{ relativeXRef };
+static std::span<std::uint8_t> absolute_ref{ absolute_xref };
+static std::span<std::uint8_t> relative_ref{ relative_xref };
 
-static void initXRefArray()
+static void init_xref_array()
 {
 	const std::size_t offset = 8;
 
-	memcpy(absoluteXRef + offset, &target, sizeof(void*));
+	memcpy(absolute_xref + offset, &target, sizeof(void*));
 
-	auto base = reinterpret_cast<std::uintptr_t>(relativeXRef + offset + 4);
-	auto pTarget = reinterpret_cast<std::uintptr_t>(&target);
-	const std::size_t distance = std::max(pTarget, base) - std::min(pTarget, base);
-	auto jmpTarget = static_cast<std::int32_t>(distance);
-	if (base > pTarget)
-		jmpTarget *= -1;
-	std::memcpy(relativeXRef + offset, &jmpTarget, sizeof(std::int32_t));
+	auto base = reinterpret_cast<std::uintptr_t>(relative_xref + offset + 4);
+	auto target_ptr = reinterpret_cast<std::uintptr_t>(&target);
+	const std::size_t distance = std::max(target_ptr, base) - std::min(target_ptr, base);
+	auto jmp_target = static_cast<std::int32_t>(distance);
+	if (base > target_ptr)
+		jmp_target *= -1;
+	std::memcpy(relative_xref + offset, &jmp_target, sizeof(std::int32_t));
 }
 
 TEST(XRefPattern, AbsoluteForwards)
 {
-	initXRefArray();
+	init_xref_array();
 
 	auto signature = XRefSignature{ XRefTypes::absolute(), target };
-	auto hit = signature.next(absoluteRef.begin(), absoluteRef.end());
+	auto hit = signature.next(absolute_ref.begin(), absolute_ref.end());
 
-	EXPECT_NE(hit, absoluteRef.end());
-	const std::size_t offset = std::distance(absoluteRef.begin(), hit);
+	EXPECT_NE(hit, absolute_ref.end());
+	const std::size_t offset = std::distance(absolute_ref.begin(), hit);
 	EXPECT_EQ(offset, 8);
 }
 
 TEST(XRefPattern, RelativeForwards)
 {
-	initXRefArray();
+	init_xref_array();
 
 	auto signature = XRefSignature{ XRefTypes::relative(), reinterpret_cast<std::uintptr_t>(&target) };
-	auto hit = signature.next(relativeRef.begin(), relativeRef.end());
+	auto hit = signature.next(relative_ref.begin(), relative_ref.end());
 
-	EXPECT_NE(hit, relativeRef.end());
-	const std::size_t offset = std::distance(relativeRef.begin(), hit);
+	EXPECT_NE(hit, relative_ref.end());
+	const std::size_t offset = std::distance(relative_ref.begin(), hit);
 	EXPECT_EQ(offset, 8);
 }
 
 TEST(XRefPattern, AbsoluteBackwards)
 {
-	initXRefArray();
+	init_xref_array();
 
 	auto signature = XRefSignature{ XRefTypes::absolute(), target };
-	auto hit = signature.prev(absoluteRef.rbegin(), absoluteRef.rend());
+	auto hit = signature.prev(absolute_ref.rbegin(), absolute_ref.rend());
 
-	EXPECT_NE(hit, absoluteRef.rend());
-	const std::size_t offset = std::distance(absoluteRef.rbegin(), hit);
+	EXPECT_NE(hit, absolute_ref.rend());
+	const std::size_t offset = std::distance(absolute_ref.rbegin(), hit);
 	EXPECT_EQ(offset, 15);
 }
 
 TEST(XRefPattern, RelativeBackwards)
 {
-	initXRefArray();
+	init_xref_array();
 
 	auto signature = XRefSignature{ XRefTypes::relative(), reinterpret_cast<std::uintptr_t>(&target) };
-	auto hit = signature.prev(relativeRef.rbegin(), relativeRef.rend());
+	auto hit = signature.prev(relative_ref.rbegin(), relative_ref.rend());
 
-	EXPECT_NE(hit, relativeRef.rend());
-	const std::size_t offset = std::distance(relativeRef.rbegin(), hit);
+	EXPECT_NE(hit, relative_ref.rend());
+	const std::size_t offset = std::distance(relative_ref.rbegin(), hit);
 	EXPECT_EQ(offset, 11);
 }
 
 TEST(XRefPattern, All)
 {
-	initXRefArray();
+	init_xref_array();
 
-	auto absoluteSig = XRefSignature{ XRefTypes::absolute(), target };
-	auto relativeSig = XRefSignature{ XRefTypes::relative(), reinterpret_cast<std::uintptr_t>(&target) };
-	std::vector<decltype(absoluteRef)::iterator> hits;
-	absoluteSig.all(absoluteRef.begin(), absoluteRef.end(), std::back_inserter(hits));
-	relativeSig.all(relativeRef.begin(), relativeRef.end(), std::back_inserter(hits));
+	auto absolute_sig = XRefSignature{ XRefTypes::absolute(), target };
+	auto relative_sig = XRefSignature{ XRefTypes::relative(), reinterpret_cast<std::uintptr_t>(&target) };
+	std::vector<decltype(absolute_ref)::iterator> hits;
+	absolute_sig.all(absolute_ref.begin(), absolute_ref.end(), std::back_inserter(hits));
+	relative_sig.all(relative_ref.begin(), relative_ref.end(), std::back_inserter(hits));
 
 	EXPECT_EQ(hits.size(), 2);
-	EXPECT_EQ(reinterpret_cast<void*>(&*hits[0]), absoluteXRef + 8);
-	EXPECT_EQ(reinterpret_cast<void*>(&*hits[1]), relativeXRef + 8);
+	EXPECT_EQ(reinterpret_cast<void*>(&*hits[0]), absolute_xref + 8);
+	EXPECT_EQ(reinterpret_cast<void*>(&*hits[1]), relative_xref + 8);
 }

@@ -15,7 +15,7 @@ namespace SignatureScanner::detail {
 		{ signature.prev(iterator, end) } -> std::same_as<ByteSpanIterator>;
 		{ signature.all(iterator, end, inserter) };
 
-		{ signature.doesMatch(iterator, end) } -> std::convertible_to<bool>;
+		{ signature.does_match(iterator, end) } -> std::convertible_to<bool>;
 	};
 }
 

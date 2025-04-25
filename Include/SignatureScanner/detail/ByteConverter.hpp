@@ -12,7 +12,7 @@
 
 namespace SignatureScanner::detail {
 	template <std::integral T, std::input_iterator Iter>
-	constexpr std::optional<T> convertBytes(Iter iter, const std::sentinel_for<Iter> auto& end)
+	constexpr std::optional<T> convert_bytes(Iter iter, const std::sentinel_for<Iter> auto& end)
 	{
 		T num;
 		if constexpr (std::contiguous_iterator<Iter> && sizeof(std::iter_value_t<Iter>) == 1) {

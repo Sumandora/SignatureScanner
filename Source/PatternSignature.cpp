@@ -10,15 +10,15 @@
 
 #include "Flatten.hpp"
 
-FLATTEN const std::byte* SignatureScanner::PatternSignature::optimizedNext(const std::byte* begin, const std::byte* end) const
+FLATTEN const std::byte* SignatureScanner::PatternSignature::optimized_next(const std::byte* begin, const std::byte* end) const
 {
-	return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<std::byte>).begin();
+	return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::pattern_compare<std::byte>).begin();
 }
 
-FLATTEN const std::byte* SignatureScanner::PatternSignature::optimizedPrev(const std::byte* begin, const std::byte* end) const
+FLATTEN const std::byte* SignatureScanner::PatternSignature::optimized_prev(const std::byte* begin, const std::byte* end) const
 {
 	auto rbegin = std::make_reverse_iterator(begin);
 	auto rend = std::make_reverse_iterator(end);
-	auto match = std::ranges::search(rbegin, rend, elements.crbegin(), elements.crend(), detail::patternCompare<std::byte>).end();
+	auto match = std::ranges::search(rbegin, rend, elements.crbegin(), elements.crend(), detail::pattern_compare<std::byte>).end();
 	return std::to_address(match);
 }

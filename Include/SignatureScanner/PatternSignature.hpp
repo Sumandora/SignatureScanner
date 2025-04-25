@@ -31,42 +31,41 @@ namespace SignatureScanner {
 		}
 
 		template <detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
-		static PatternSignature fromBytes()
+		static PatternSignature from_bytes()
 		{
-			constexpr auto pattern = detail::buildBytePattern<String, Delimiter, Wildcard>();
+			static constexpr auto PATTERN = detail::build_byte_pattern<String, Delimiter, Wildcard>();
 
-			return PatternSignature{ pattern };
+			return PatternSignature{ PATTERN };
 		}
 
-		static PatternSignature fromBytes(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
+		static PatternSignature from_bytes(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
 		{
-			auto pattern = detail::buildBytePattern(string, delimiter, wildcard);
+			auto pattern = detail::build_byte_pattern(string, delimiter, wildcard);
 
 			return PatternSignature{ std::move(pattern) };
 		}
 
 		template <detail::TemplateString String, bool IncludeTerminator = true, char Wildcard = DEFAULT_WILDCARD>
-		static PatternSignature fromString()
+		static PatternSignature from_string()
 		{
-			constexpr auto pattern = detail::buildStringPattern<String, IncludeTerminator, Wildcard>();
+			static constexpr auto PATTERN = detail::build_string_pattern<String, IncludeTerminator, Wildcard>();
 
-			return PatternSignature{ pattern };
+			return PatternSignature{ PATTERN };
 		}
 
-		static PatternSignature fromString(std::string_view string, bool includeTerminator = true, char wildcard = DEFAULT_WILDCARD)
+		static PatternSignature from_string(std::string_view string, bool include_terminator = true, char wildcard = DEFAULT_WILDCARD)
 		{
-			auto pattern = detail::buildStringPattern(string, includeTerminator, wildcard);
+			auto pattern = detail::build_string_pattern(string, include_terminator, wildcard);
 
 			return PatternSignature{ std::move(pattern) };
 		}
 
-		[[nodiscard]] constexpr const std::vector<PatternElement>& getElements() const { return elements; }
-		[[nodiscard]] constexpr std::size_t getLength() const { return elements.size(); }
+		[[nodiscard]] constexpr const std::vector<PatternElement>& get_elements() const { return elements; }
 
 #ifdef SIGNATURESCANNER_OPTIMIZE
 	private:
-		const std::byte* optimizedNext(const std::byte* begin, const std::byte* end) const;
-		const std::byte* optimizedPrev(const std::byte* begin, const std::byte* end) const;
+		const std::byte* optimized_next(const std::byte* begin, const std::byte* end) const;
+		const std::byte* optimized_prev(const std::byte* begin, const std::byte* end) const;
 
 	public:
 #endif
@@ -76,14 +75,14 @@ namespace SignatureScanner {
 		{
 #ifdef SIGNATURESCANNER_OPTIMIZE
 			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
-				const auto* beginPtr = reinterpret_cast<const std::byte*>(std::to_address(begin));
-				const auto* endPtr = reinterpret_cast<const std::byte*>(std::to_address(end));
+				const auto* begin_ptr = reinterpret_cast<const std::byte*>(std::to_address(begin));
+				const auto* end_ptr = reinterpret_cast<const std::byte*>(std::to_address(end));
 
-				auto matchDist = optimizedNext(beginPtr, endPtr) - beginPtr;
-				return std::next(begin, matchDist);
+				auto match_dist = optimized_next(begin_ptr, end_ptr) - begin_ptr;
+				return std::next(begin, match_dist);
 			}
 #endif
-			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::patternCompare<std::iter_value_t<Iter>>).begin();
+			return std::ranges::search(begin, end, elements.cbegin(), elements.cend(), detail::pattern_compare<std::iter_value_t<Iter>>).begin();
 		}
 
 		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
@@ -92,14 +91,14 @@ namespace SignatureScanner {
 			Iter match;
 #ifdef SIGNATURESCANNER_OPTIMIZE
 			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
-				const auto* beginPtr = reinterpret_cast<const std::byte*>(std::to_address(begin));
-				const auto* endPtr = reinterpret_cast<const std::byte*>(std::to_address(end));
+				const auto* begin_ptr = reinterpret_cast<const std::byte*>(std::to_address(begin));
+				const auto* end_ptr = reinterpret_cast<const std::byte*>(std::to_address(end));
 
-				auto matchDist = optimizedPrev(beginPtr, endPtr) - beginPtr;
-				match = std::next(begin, matchDist);
+				auto match_dist = optimized_prev(begin_ptr, end_ptr) - begin_ptr;
+				match = std::next(begin, match_dist);
 			} else
 #endif
-				match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::patternCompare<std::iter_value_t<Iter>>).end();
+				match = std::ranges::search(begin, end, elements.crbegin(), elements.crend(), detail::pattern_compare<std::iter_value_t<Iter>>).end();
 
 			if (match != end)
 				// This match will be one-after-the-end of the pattern, for consistency we need the first byte (from the beginning).
@@ -109,15 +108,15 @@ namespace SignatureScanner {
 		}
 
 		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr bool doesMatch(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
+		[[nodiscard]] constexpr bool does_match(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
 		{
-			std::input_iterator auto iterEnd = iter;
+			std::input_iterator auto iter_end = iter;
 			for (std::size_t i = 0; i < elements.size(); i++) {
-				if (iterEnd == end)
+				if (iter_end == end)
 					return false;
-				iterEnd++;
+				iter_end++;
 			}
-			return std::equal(iter, iterEnd, elements.cbegin(), elements.end(), detail::patternCompare<std::iter_value_t<Iter>>);
+			return std::equal(iter, iter_end, elements.cbegin(), elements.end(), detail::pattern_compare<std::iter_value_t<Iter>>);
 		}
 	};
 

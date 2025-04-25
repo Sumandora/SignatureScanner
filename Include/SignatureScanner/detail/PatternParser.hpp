@@ -16,7 +16,7 @@ namespace SignatureScanner {
 
 	namespace detail {
 		template <typename T>
-		constexpr bool patternCompare(const T& byte, const PatternElement& elem)
+		constexpr bool pattern_compare(const T& byte, const PatternElement& elem)
 		{
 			if (!elem.has_value())
 				return true;
@@ -30,7 +30,7 @@ namespace SignatureScanner {
 			}
 		}
 
-		constexpr uint8_t chrToHex(char c)
+		constexpr uint8_t chr_to_hex(char c)
 		{
 			if ('0' <= c && c <= '9') {
 				return c - '0';
@@ -44,27 +44,27 @@ namespace SignatureScanner {
 			return 0;
 		}
 
-		constexpr uint8_t strToHex(std::string_view input)
+		constexpr uint8_t str_to_hex(std::string_view input)
 		{
 			uint8_t val = 0;
 			for (const char c : input) {
 				val *= 16;
-				val += chrToHex(c);
+				val += chr_to_hex(c);
 			}
 			return val;
 		}
 
-		constexpr PatternElement buildWord(std::string_view word, char wildcard)
+		constexpr PatternElement build_word(std::string_view word, char wildcard)
 		{
 			if (std::ranges::all_of(word, [wildcard](char c) { return c == wildcard; }))
 				return PatternElement{ std::nullopt };
 
-			return PatternElement{ static_cast<std::byte>(strToHex(word)) };
+			return PatternElement{ static_cast<std::byte>(str_to_hex(word)) };
 		}
 
 		template <std::ranges::input_range Range>
 			requires std::same_as<char, std::ranges::range_value_t<Range>>
-		constexpr void buildSignature(const Range& range, std::output_iterator<PatternElement> auto inserter, char delimiter, char wildcard)
+		constexpr void build_signature(const Range& range, std::output_iterator<PatternElement> auto inserter, char delimiter, char wildcard)
 		{
 			std::string word;
 
@@ -73,14 +73,14 @@ namespace SignatureScanner {
 					if (word.empty())
 						continue;
 
-					*inserter++ = buildWord(word, wildcard);
+					*inserter++ = build_word(word, wildcard);
 
 					word = "";
 				} else
 					word += c;
 
 			if (!word.empty())
-				*inserter++ = buildWord(word, wildcard);
+				*inserter++ = build_word(word, wildcard);
 		}
 	}
 }

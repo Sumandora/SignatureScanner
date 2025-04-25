@@ -29,40 +29,40 @@ namespace SignatureScanner {
 		};
 
 		template <TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
-		consteval auto buildBytePattern()
+		consteval auto build_byte_pattern()
 		{
-			static constexpr auto countWords = [] {
-				bool wasChar = false;
+			static constexpr std::size_t WORD_COUNT = [] {
+				bool was_char = false;
 
 				std::size_t count = 0;
 				for (char c : String) {
-					bool isChar = c != Delimiter;
-					if (!wasChar && isChar)
+					bool is_char = c != Delimiter;
+					if (!was_char && is_char)
 						count++;
 
-					wasChar = isChar;
+					was_char = is_char;
 				}
 
 				return count;
-			};
-			std::array<PatternElement, countWords()> signature;
+			}();
+			std::array<PatternElement, WORD_COUNT> signature;
 
-			buildSignature(String, ArrayInserter(signature), Delimiter, Wildcard);
+			build_signature(String, ArrayInserter(signature), Delimiter, Wildcard);
 
 			return signature;
 		}
 
-		constexpr auto buildBytePattern(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
+		constexpr auto build_byte_pattern(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
 		{
 			std::vector<PatternElement> signature;
 
-			buildSignature(string, std::back_inserter(signature), delimiter, wildcard);
+			build_signature(string, std::back_inserter(signature), delimiter, wildcard);
 
 			return signature;
 		}
 
 		template <TemplateString String, bool IncludeTerminator = true, char Wildcard = DEFAULT_WILDCARD>
-		consteval auto buildStringPattern()
+		consteval auto build_string_pattern()
 		{
 			std::array<PatternElement, String.size() + (IncludeTerminator ? 1 : 0)> signature;
 
@@ -79,10 +79,10 @@ namespace SignatureScanner {
 			return signature;
 		}
 
-		constexpr auto buildStringPattern(std::string_view string, bool includeTerminator = true, char wildcard = DEFAULT_WILDCARD)
+		constexpr auto build_string_pattern(std::string_view string, bool include_terminator = true, char wildcard = DEFAULT_WILDCARD)
 		{
 			std::vector<PatternElement> signature;
-			signature.reserve(string.size() + (includeTerminator ? 1 : 0));
+			signature.reserve(string.size() + (include_terminator ? 1 : 0));
 
 			for (char c : string)
 				if (c == wildcard)
@@ -90,7 +90,7 @@ namespace SignatureScanner {
 				else
 					signature.emplace_back(static_cast<std::byte>(c));
 
-			if (includeTerminator)
+			if (include_terminator)
 				signature.emplace_back(static_cast<std::byte>('\0'));
 
 			return signature;
