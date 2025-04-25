@@ -10,7 +10,6 @@
 #include <array>
 #include <cstddef>
 #include <iterator>
-#include <memory>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -64,13 +63,14 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr const std::vector<PatternElement>& getElements() const { return elements; }
 		[[nodiscard]] constexpr std::size_t getLength() const { return elements.size(); }
 
-	private:
 #ifdef SIGNATURESCANNER_OPTIMIZE
+	private:
 		const std::byte* optimizedNext(const std::byte* begin, const std::byte* end) const;
 		const std::byte* optimizedPrev(const std::byte* begin, const std::byte* end) const;
-#endif
 
 	public:
+#endif
+
 		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr Iter next(const Iter& begin, const Sent& end) const
 		{
