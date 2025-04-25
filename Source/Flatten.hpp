@@ -3,5 +3,6 @@
 #elif __clang__
 #define FLATTEN [[gnu::flatten]]
 #else
+#warning Your compiler does not support the [[gnu::flatten]] attribute, performance of SignatureScanner may be impacted
 #define FLATTEN
 #endif
