@@ -31,14 +31,14 @@ namespace SignatureScanner {
 		}
 
 		template <detail::TemplateString String, char Delimiter = DEFAULT_DELIMITER, char Wildcard = DEFAULT_WILDCARD>
-		static PatternSignature from_bytes()
+		static PatternSignature for_array_of_bytes()
 		{
 			static constexpr auto PATTERN = detail::build_byte_pattern<String, Delimiter, Wildcard>();
 
 			return PatternSignature{ PATTERN };
 		}
 
-		static PatternSignature from_bytes(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
+		static PatternSignature for_array_of_bytes(std::string_view string, char delimiter = DEFAULT_DELIMITER, char wildcard = DEFAULT_WILDCARD)
 		{
 			auto pattern = detail::build_byte_pattern(string, delimiter, wildcard);
 
@@ -46,14 +46,14 @@ namespace SignatureScanner {
 		}
 
 		template <detail::TemplateString String, bool IncludeTerminator = true, char Wildcard = DEFAULT_WILDCARD>
-		static PatternSignature from_string()
+		static PatternSignature for_literal_string()
 		{
 			static constexpr auto PATTERN = detail::build_string_pattern<String, IncludeTerminator, Wildcard>();
 
 			return PatternSignature{ PATTERN };
 		}
 
-		static PatternSignature from_string(std::string_view string, bool include_terminator = true, char wildcard = DEFAULT_WILDCARD)
+		static PatternSignature for_literal_string(std::string_view string, bool include_terminator = true, char wildcard = DEFAULT_WILDCARD)
 		{
 			auto pattern = detail::build_string_pattern(string, include_terminator, wildcard);
 

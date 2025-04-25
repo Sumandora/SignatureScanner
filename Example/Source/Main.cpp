@@ -30,7 +30,7 @@ static std::span<std::uint8_t> bytes_span{ bytes };
 
 TEST(BytePattern, Forwards)
 {
-	const PatternSignature signature = PatternSignature::from_bytes<"e4">();
+	const PatternSignature signature = PatternSignature::for_array_of_bytes<"e4">();
 	auto hit = signature.next(bytes_span.begin(), bytes_span.end());
 
 	EXPECT_NE(hit, bytes_span.end());
@@ -40,7 +40,7 @@ TEST(BytePattern, Forwards)
 
 TEST(BytePattern, Backwards)
 {
-	const PatternSignature signature = PatternSignature::from_bytes<"e4">();
+	const PatternSignature signature = PatternSignature::for_array_of_bytes<"e4">();
 	auto hit = signature.prev(bytes_span.rbegin(), bytes_span.rend());
 
 	EXPECT_NE(hit, bytes_span.rend());
@@ -50,7 +50,7 @@ TEST(BytePattern, Backwards)
 
 TEST(BytePattern, All)
 {
-	const PatternSignature signature = PatternSignature::from_bytes<"a9">();
+	const PatternSignature signature = PatternSignature::for_array_of_bytes<"a9">();
 	std::vector<decltype(bytes_span)::iterator> hits;
 	signature.all(bytes_span.begin(), bytes_span.end(), std::back_inserter(hits));
 
@@ -65,7 +65,7 @@ static std::string_view string = "The Answer to the Great Question Of Life, the 
 
 TEST(StringPattern, Forwards)
 {
-	const PatternSignature signature = PatternSignature::from_string<"Forty-two", false>();
+	const PatternSignature signature = PatternSignature::for_literal_string<"Forty-two", false>();
 	// NOLINTNEXTLINE(llvm-qualified-auto, readability-qualified-auto)
 	auto hit = signature.next(string.begin(), string.end());
 
@@ -76,7 +76,7 @@ TEST(StringPattern, Forwards)
 
 TEST(StringPattern, Backwards)
 {
-	const PatternSignature signature = PatternSignature::from_string<"Forty-two", false>();
+	const PatternSignature signature = PatternSignature::for_literal_string<"Forty-two", false>();
 	auto hit = signature.prev(string.rbegin(), string.rend());
 
 	EXPECT_NE(hit, string.rend());
@@ -86,7 +86,7 @@ TEST(StringPattern, Backwards)
 
 TEST(StringPattern, All)
 {
-	const PatternSignature signature = PatternSignature::from_string<" ?? ", false>();
+	const PatternSignature signature = PatternSignature::for_literal_string<" ?? ", false>();
 	std::vector<decltype(string)::iterator> hits;
 	signature.all(string.begin(), string.end(), std::back_inserter(hits));
 
