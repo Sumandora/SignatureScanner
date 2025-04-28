@@ -1,7 +1,6 @@
 #ifndef SIGNATURESCANNER_XREFSIGNATURE_HPP
 #define SIGNATURESCANNER_XREFSIGNATURE_HPP
 
-#include "detail/AllMixin.hpp"
 #include "detail/ByteConverter.hpp"
 #include "detail/SignatureConcept.hpp"
 
@@ -55,7 +54,7 @@ namespace SignatureScanner {
 		}
 	};
 
-	class XRefSignature : public detail::AllMixin {
+	class XRefSignature {
 		static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big, "Mixed endian is not supported");
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
@@ -95,6 +94,12 @@ namespace SignatureScanner {
 		[[nodiscard]] constexpr bool does_match(const Iter& iter, const std::sentinel_for<Iter> auto& end) const
 		{
 			return does_match(iter, end, reinterpret_cast<std::uintptr_t>(std::to_address(iter)));
+		}
+
+		template <std::input_iterator Iter>
+		constexpr void all(Iter begin, const std::sentinel_for<Iter> auto& end, std::output_iterator<Iter> auto inserter)
+		{
+			return all(begin, end, inserter, reinterpret_cast<std::uintptr_t>(std::to_address(begin)));
 		}
 
 		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
@@ -170,6 +175,21 @@ namespace SignatureScanner {
 					return true;
 
 			return false;
+		}
+
+		template <std::input_iterator Iter>
+		constexpr void all(Iter begin, const std::sentinel_for<Iter> auto& end, std::output_iterator<Iter> auto inserter, std::uintptr_t location) const
+		{
+			Iter current = begin;
+			while (true) {
+				auto it = this->next(current, end, location);
+				if (it == end)
+					break;
+				*inserter++ = it;
+				current = it;
+				current++;
+				location += std::distance(begin, current);
+			}
 		}
 
 		[[nodiscard]] constexpr bool is_absolute() const

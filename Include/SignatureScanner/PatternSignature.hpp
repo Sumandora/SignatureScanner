@@ -1,10 +1,9 @@
 #ifndef SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 #define SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 
-#include "detail/AllMixin.hpp"
+#include "detail/SignatureConcept.hpp"
 #include "detail/PatternBuilder.hpp"
 #include "detail/PatternParser.hpp"
-#include "detail/SignatureConcept.hpp"
 
 #include <algorithm>
 #include <array>
@@ -15,7 +14,7 @@
 #include <vector>
 
 namespace SignatureScanner {
-	class PatternSignature : public detail::AllMixin {
+	class PatternSignature {
 		std::vector<PatternElement> elements;
 
 	public:
@@ -108,6 +107,19 @@ namespace SignatureScanner {
 		}
 
 		template <std::input_iterator Iter>
+		constexpr void all(Iter begin, const std::sentinel_for<Iter> auto& end, std::output_iterator<Iter> auto inserter) const
+		{
+			while (true) {
+				auto it = this->next(begin, end);
+				if (it == end)
+					break;
+				*inserter++ = it;
+				begin = it;
+				begin++;
+			}
+		}
+
+		template <std::input_iterator Iter>
 		[[nodiscard]] constexpr bool does_match(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
 		{
 			std::input_iterator auto iter_end = iter;
@@ -121,7 +133,6 @@ namespace SignatureScanner {
 	};
 
 	static_assert(detail::Signature<PatternSignature>);
-
 }
 
 #endif
