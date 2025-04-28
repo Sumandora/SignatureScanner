@@ -74,39 +74,57 @@ namespace SignatureScanner {
 
 	private:
 #ifdef SIGNATURESCANNER_OPTIMIZE
-		const std::byte* optimized_next(const std::byte* it, const std::byte* end) const;
-		const std::byte* optimized_prev(const std::byte* it, const std::byte* end) const;
+		const std::byte* optimized_next(const std::byte* it, const std::byte* end, std::uintptr_t location) const;
+		const std::byte* optimized_prev(const std::byte* it, const std::byte* end, std::uintptr_t location) const;
 #endif
 
 	public:
 		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr Iter next(Iter it, const Sent& end) const
 		{
-#ifdef SIGNATURESCANNER_OPTIMIZE
-			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
-				const auto* it_ptr = reinterpret_cast<const std::byte*>(std::to_address(it));
-				const auto* end_ptr = reinterpret_cast<const std::byte*>(std::to_address(end));
-
-				auto match_dist = optimized_next(it_ptr, end_ptr) - it_ptr;
-				return std::next(it, match_dist);
-			}
-#endif
-			for (; it != end; it++)
-				if (does_match(it, end))
-					return it;
-
-			return it;
+			return next(it, end, reinterpret_cast<std::uintptr_t>(std::to_address(it)));
 		}
 
 		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
 		[[nodiscard]] constexpr Iter prev(Iter it, const Sent& end) const
+		{
+			return prev(it, end, reinterpret_cast<std::uintptr_t>(std::to_address(it)));
+		}
+
+		template <std::input_iterator Iter>
+		[[nodiscard]] constexpr bool does_match(const Iter& iter, const std::sentinel_for<Iter> auto& end) const
+		{
+			return does_match(iter, end, reinterpret_cast<std::uintptr_t>(std::to_address(iter)));
+		}
+
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter next(Iter it, const Sent& end, std::uintptr_t location) const
 		{
 #ifdef SIGNATURESCANNER_OPTIMIZE
 			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
 				const auto* it_ptr = reinterpret_cast<const std::byte*>(std::to_address(it));
 				const auto* end_ptr = reinterpret_cast<const std::byte*>(std::to_address(end));
 
-				auto match_dist = optimized_prev(it_ptr, end_ptr) - it_ptr;
+				auto match_dist = optimized_next(it_ptr, end_ptr, location) - it_ptr;
+				return std::next(it, match_dist);
+			}
+#endif
+			for (; it != end; it++)
+				if (does_match(it, end, location++))
+					return it;
+
+			return it;
+		}
+
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter prev(Iter it, const Sent& end, std::uintptr_t location) const
+		{
+#ifdef SIGNATURESCANNER_OPTIMIZE
+			if constexpr (std::contiguous_iterator<Iter> && std::contiguous_iterator<Sent> && sizeof(std::iter_value_t<Iter>) == 1) {
+				const auto* it_ptr = reinterpret_cast<const std::byte*>(std::to_address(it));
+				const auto* end_ptr = reinterpret_cast<const std::byte*>(std::to_address(end));
+
+				auto match_dist = optimized_prev(it_ptr, end_ptr, location) - it_ptr;
 				return std::next(it, match_dist);
 			}
 #endif
@@ -118,7 +136,7 @@ namespace SignatureScanner {
 				// a one-past-the-end iterator dereferences to the last element in a sequence.
 				// ```
 				// https://en.cppreference.com/w/cpp/iterator/reverse_iterator
-				if (does_match(std::make_reverse_iterator(it) - 1, std::make_reverse_iterator(end) - 1))
+				if (does_match(std::make_reverse_iterator(it) - 1, std::make_reverse_iterator(end) - 1, location--))
 					return it;
 			}
 
@@ -126,7 +144,7 @@ namespace SignatureScanner {
 		}
 
 		template <std::input_iterator Iter>
-		[[nodiscard]] constexpr bool does_match(const Iter& iter, const std::sentinel_for<Iter> auto& end = std::unreachable_sentinel_t{}) const
+		[[nodiscard]] constexpr bool does_match(const Iter& iter, const std::sentinel_for<Iter> auto& end, std::uintptr_t location) const
 		{
 			if (is_absolute())
 				if (auto bytes = detail::convert_bytes<std::uintptr_t>(iter, end))
@@ -135,7 +153,7 @@ namespace SignatureScanner {
 
 			if (is_relative())
 				if (auto bytes = detail::convert_bytes<RelAddrType>(iter, end))
-					if (does_relative_match(bytes.value(), reinterpret_cast<std::uintptr_t>(&*iter)))
+					if (does_relative_match(bytes.value(), location))
 						return true;
 
 			return false;
