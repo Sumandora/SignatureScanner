@@ -186,9 +186,10 @@ namespace SignatureScanner {
 				if (it == end)
 					break;
 				*inserter++ = it;
+
+				location += std::distance(current, it) + 1;
 				current = it;
 				current++;
-				location += std::distance(begin, current);
 			}
 		}
 
