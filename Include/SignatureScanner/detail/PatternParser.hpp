@@ -8,8 +8,7 @@
 #include <iterator>
 #include <optional>
 #include <ranges>
-#include <string>
-#include <string_view>
+#include <vector>
 
 namespace SignatureScanner {
 	using PatternElement = std::optional<std::byte>;
@@ -44,7 +43,7 @@ namespace SignatureScanner {
 			return 0;
 		}
 
-		constexpr uint8_t str_to_hex(std::string_view input)
+		constexpr uint8_t str_to_hex(const auto& input)
 		{
 			uint8_t val = 0;
 			for (const char c : input) {
@@ -54,7 +53,7 @@ namespace SignatureScanner {
 			return val;
 		}
 
-		constexpr PatternElement build_word(std::string_view word, char wildcard)
+		constexpr PatternElement build_word(const auto& word, char wildcard)
 		{
 			if (std::ranges::all_of(word, [wildcard](char c) { return c == wildcard; }))
 				return PatternElement{ std::nullopt };
@@ -66,7 +65,9 @@ namespace SignatureScanner {
 			requires std::same_as<char, std::ranges::range_value_t<Range>>
 		constexpr void build_signature(const Range& range, std::output_iterator<PatternElement> auto inserter, char delimiter, char wildcard)
 		{
-			std::string word;
+			// Don't use std::string, because if old string abi is used, then gcc jokes on std::string in constexpr-time.
+			// There is no specific property of the std::string that is needed here, so a std::vector<char> is used instead.
+			std::vector<char> word;
 
 			for (char c : range)
 				if (c == delimiter) {
@@ -75,9 +76,9 @@ namespace SignatureScanner {
 
 					*inserter++ = build_word(word, wildcard);
 
-					word = "";
+					word.clear();
 				} else
-					word += c;
+					word.push_back(c);
 
 			if (!word.empty())
 				*inserter++ = build_word(word, wildcard);
