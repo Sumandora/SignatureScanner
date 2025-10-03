@@ -6,6 +6,7 @@
 #include "detail/ByteConverter.hpp"
 
 #include <bit>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -33,17 +34,17 @@ namespace SignatureScanner {
 			return absolute_enabled;
 		}
 
-		constexpr static XRefTypes relative()
+		static constexpr XRefTypes relative()
 		{
 			return { true, false };
 		}
 
-		constexpr static XRefTypes absolute()
+		static constexpr XRefTypes absolute()
 		{
 			return { false, true };
 		}
 
-		constexpr static XRefTypes relative_and_absolute()
+		static constexpr XRefTypes relative_and_absolute()
 		{
 			return { true, true };
 		}
@@ -55,8 +56,8 @@ namespace SignatureScanner {
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
 
 		const std::uintptr_t address;
-		const bool absolute;
-		const std::uint8_t instruction_length; // If instruction_length == 0 then relative search is disabled
+		const bool absolute : 1;
+		const std::uint8_t instruction_length : /* ceil(log2(x86 max instruction length: 15)) = */ 4; // If instruction_length == 0 then relative search is disabled
 
 	public:
 		explicit constexpr XRefSignature(XRefTypes types, std::uintptr_t address, std::uint8_t instruction_length = 4)
