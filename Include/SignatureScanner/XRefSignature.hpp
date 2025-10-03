@@ -6,52 +6,46 @@
 #include "detail/ByteConverter.hpp"
 
 #include <bit>
-#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <type_traits>
 
 namespace SignatureScanner {
-	class XRefTypes : public std::bitset<2> {
-		enum Index : std::uint8_t {
-			RELATIVE = 0,
-			ABSOLUTE = 1
-		};
+	class XRefTypes {
+		bool relative_enabled : 1;
+		bool absolute_enabled : 1;
+
+		constexpr XRefTypes(bool relative, bool absolute)
+			: relative_enabled(relative)
+			, absolute_enabled(absolute)
+		{
+		}
 
 	public:
 		[[nodiscard]] constexpr bool is_relative() const
 		{
-			return test(RELATIVE);
+			return relative_enabled;
 		}
 
 		[[nodiscard]] constexpr bool is_absolute() const
 		{
-			return test(ABSOLUTE);
+			return absolute_enabled;
 		}
 
 		constexpr static XRefTypes relative()
 		{
-			XRefTypes types;
-			types.set(RELATIVE, true);
-			types.set(ABSOLUTE, false);
-			return types;
+			return { true, false };
 		}
 
 		constexpr static XRefTypes absolute()
 		{
-			XRefTypes types;
-			types.set(RELATIVE, false);
-			types.set(ABSOLUTE, true);
-			return types;
+			return { false, true };
 		}
 
 		constexpr static XRefTypes relative_and_absolute()
 		{
-			XRefTypes types;
-			types.set(RELATIVE, true);
-			types.set(ABSOLUTE, true);
-			return types;
+			return { true, true };
 		}
 	};
 
