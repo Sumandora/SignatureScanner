@@ -1,7 +1,8 @@
 #ifndef SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 #define SIGNATURESCANNER_PATTERNSIGNATURE_HPP
 
-#include "detail/SignatureConcept.hpp"
+#include "SignatureConcept.hpp"
+
 #include "detail/PatternBuilder.hpp"
 #include "detail/PatternParser.hpp"
 
@@ -132,7 +133,7 @@ namespace SignatureScanner {
 		}
 	};
 
-	static_assert(detail::Signature<PatternSignature>);
+	static_assert(Signature<PatternSignature>);
 }
 
 #endif

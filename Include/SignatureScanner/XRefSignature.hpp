@@ -1,8 +1,9 @@
 #ifndef SIGNATURESCANNER_XREFSIGNATURE_HPP
 #define SIGNATURESCANNER_XREFSIGNATURE_HPP
 
+#include "SignatureConcept.hpp"
+
 #include "detail/ByteConverter.hpp"
-#include "detail/SignatureConcept.hpp"
 
 #include <bit>
 #include <bitset>
@@ -219,7 +220,7 @@ namespace SignatureScanner {
 		}
 	};
 
-	static_assert(detail::Signature<XRefSignature>);
+	static_assert(Signature<XRefSignature>);
 }
 
 #endif
