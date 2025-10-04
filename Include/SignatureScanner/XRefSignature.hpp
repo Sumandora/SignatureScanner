@@ -180,12 +180,12 @@ namespace SignatureScanner {
 			}
 		}
 
-		[[nodiscard]] constexpr bool is_absolute() const
+		[[nodiscard]] constexpr static bool is_absolute()
 		{
 			return IS_ABSOLUTE;
 		}
 
-		[[nodiscard]] constexpr bool is_relative() const
+		[[nodiscard]] constexpr static bool is_relative()
 		{
 			return IS_RELATIVE;
 		}
