@@ -23,8 +23,8 @@ namespace SignatureScanner {
 	class XRefSignature {
 		static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big, "Mixed endian is not supported");
 
-		static constexpr bool IS_ABSOLUTE = Types == XRefTypes::ABSOLUTE || Types == XRefTypes::RELATIVE_AND_ABSOLUTE;
 		static constexpr bool IS_RELATIVE = Types == XRefTypes::RELATIVE || Types == XRefTypes::RELATIVE_AND_ABSOLUTE;
+		static constexpr bool IS_ABSOLUTE = Types == XRefTypes::ABSOLUTE || Types == XRefTypes::RELATIVE_AND_ABSOLUTE;
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
 
