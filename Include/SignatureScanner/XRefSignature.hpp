@@ -47,6 +47,34 @@ namespace SignatureScanner {
 		}
 
 	private:
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter unoptimized_next(Iter it, const Sent& end, std::uintptr_t location) const
+		{
+			for (; it != end; it++)
+				if (does_match(it, end, location++))
+					return it;
+
+			return it;
+		}
+
+		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
+		[[nodiscard]] constexpr Iter unoptimized_prev(Iter it, const Sent& end, std::uintptr_t location) const
+		{
+			for (; it != end; it++) {
+				// Regarding the "- 1":
+				// ```
+				// For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1)
+				// is always true (as long as r is dereferenceable); thus a reverse iterator constructed from
+				// a one-past-the-end iterator dereferences to the last element in a sequence.
+				// ```
+				// https://en.cppreference.com/w/cpp/iterator/reverse_iterator
+				if (does_match(std::make_reverse_iterator(it) - 1, std::make_reverse_iterator(end) - 1, location--))
+					return it;
+			}
+
+			return it;
+		}
+
 #ifdef SIGNATURESCANNER_OPTIMIZE
 		const std::byte* optimized_next(const std::byte* it, const std::byte* end, std::uintptr_t location) const;
 		const std::byte* optimized_prev(const std::byte* it, const std::byte* end, std::uintptr_t location) const;
@@ -89,11 +117,7 @@ namespace SignatureScanner {
 				return std::next(it, match_dist);
 			}
 #endif
-			for (; it != end; it++)
-				if (does_match(it, end, location++))
-					return it;
-
-			return it;
+			return unoptimized_next(it, end, location);
 		}
 
 		template <std::input_iterator Iter, std::sentinel_for<Iter> Sent>
@@ -108,19 +132,7 @@ namespace SignatureScanner {
 				return std::next(it, match_dist);
 			}
 #endif
-			for (; it != end; it++) {
-				// Regarding the "- 1":
-				// ```
-				// For a reverse iterator r constructed from an iterator i, the relationship &*r == &*(i - 1)
-				// is always true (as long as r is dereferenceable); thus a reverse iterator constructed from
-				// a one-past-the-end iterator dereferences to the last element in a sequence.
-				// ```
-				// https://en.cppreference.com/w/cpp/iterator/reverse_iterator
-				if (does_match(std::make_reverse_iterator(it) - 1, std::make_reverse_iterator(end) - 1, location--))
-					return it;
-			}
-
-			return it;
+			return unoptimized_prev(it, end, location);
 		}
 
 		template <std::input_iterator Iter>
@@ -167,7 +179,7 @@ namespace SignatureScanner {
 				current++;
 			}
 		}
-		
+
 		[[nodiscard]] constexpr bool is_absolute() const
 		{
 			return IS_ABSOLUTE;

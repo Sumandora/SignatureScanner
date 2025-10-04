@@ -10,23 +10,19 @@
 
 namespace SignatureScanner {
 	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define DEFINE_OPTIMIZED_CLASS(class_name)                                                                                        \
-	template <>                                                                                                                   \
-	FLATTEN const std::byte* class_name::optimized_next(const std::byte* it, const std::byte* end, std::uintptr_t location) const \
-	{                                                                                                                             \
-		for (; it != end; it++)                                                                                                   \
-			if (does_match(it, end, location++))                                                                                  \
-				return it;                                                                                                        \
-		return it;                                                                                                                \
-	}                                                                                                                             \
-                                                                                                                                  \
-	template <>                                                                                                                   \
-	FLATTEN const std::byte* class_name::optimized_prev(const std::byte* it, const std::byte* end, std::uintptr_t location) const \
-	{                                                                                                                             \
-		for (; it != end; it--)                                                                                                   \
-			if (does_match(it, end, location--))                                                                                  \
-				return it;                                                                                                        \
-		return it;                                                                                                                \
+#define DEFINE_OPTIMIZED_CLASS(class_name)                                        \
+	template <>                                                                   \
+	FLATTEN const std::byte* class_name::optimized_next(                          \
+		const std::byte* it, const std::byte* end, std::uintptr_t location) const \
+	{                                                                             \
+		return unoptimized_next(it, end, location);                               \
+	}                                                                             \
+                                                                                  \
+	template <>                                                                   \
+	FLATTEN const std::byte* class_name::optimized_prev(                          \
+		const std::byte* it, const std::byte* end, std::uintptr_t location) const \
+	{                                                                             \
+		return unoptimized_prev(it, end, location);                               \
 	}
 
 	DEFINE_OPTIMIZED_CLASS(XRefSignature<XRefTypes::RELATIVE>)
