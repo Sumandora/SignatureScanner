@@ -22,12 +22,18 @@ namespace SignatureScanner::detail {
 		} else {
 			std::array<std::byte, sizeof(T)> arr;
 			for (std::size_t i = 0; i < sizeof(T); i++) {
+				std::size_t index = 0;
+				if constexpr(std::endian::little == std::endian::native) {
+					index = i;
+				} else {
+					index = sizeof(T) - 1 - i;
+				}
 				if (iter == end)
 					return std::nullopt;
 				if constexpr (std::assignable_from<decltype(arr[i]), std::iter_value_t<Iter>>) {
-					arr[i] = *iter;
+					arr[index] = *iter;
 				} else if constexpr (requires() { std::bit_cast<std::byte>(*iter); }) {
-					arr[i] = std::bit_cast<std::byte>(*iter);
+					arr[index] = std::bit_cast<std::byte>(*iter);
 				} else {
 					static_assert(false, "Iter type is not a byte(-like) type");
 				}
@@ -35,8 +41,6 @@ namespace SignatureScanner::detail {
 			}
 			num = std::bit_cast<T>(arr);
 		}
-		if constexpr (std::endian::little != std::endian::native)
-			num = std::byteswap(num);
 		return num;
 	}
 }
