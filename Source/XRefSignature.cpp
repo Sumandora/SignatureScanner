@@ -8,8 +8,7 @@
 
 #include "Flatten.hpp"
 
-namespace SignatureScanner {
-	// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define DEFINE_OPTIMIZED_CLASS(class_name)                                        \
 	template <>                                                                   \
 	FLATTEN const std::byte* class_name::optimized_next(                          \
@@ -25,7 +24,6 @@ namespace SignatureScanner {
 		return unoptimized_prev(it, end, location);                               \
 	}
 
-	DEFINE_OPTIMIZED_CLASS(XRefSignature<XRefTypes::RELATIVE>)
-	DEFINE_OPTIMIZED_CLASS(XRefSignature<XRefTypes::ABSOLUTE>)
-	DEFINE_OPTIMIZED_CLASS(XRefSignature<XRefTypes::RELATIVE_AND_ABSOLUTE>)
-}
+DEFINE_OPTIMIZED_CLASS(SignatureScanner::RelativeXRefSignature)
+DEFINE_OPTIMIZED_CLASS(SignatureScanner::AbsoluteXRefSignature)
+DEFINE_OPTIMIZED_CLASS(SignatureScanner::RelativeAndAbsoluteXRefSignature)

@@ -206,9 +206,13 @@ namespace SignatureScanner {
 		}
 	};
 
-	static_assert(Signature<XRefSignature<XRefTypes::RELATIVE>>);
-	static_assert(Signature<XRefSignature<XRefTypes::ABSOLUTE>>);
-	static_assert(Signature<XRefSignature<XRefTypes::RELATIVE_AND_ABSOLUTE>>);
+	using RelativeXRefSignature = XRefSignature<XRefTypes::RELATIVE>;
+	using AbsoluteXRefSignature = XRefSignature<XRefTypes::ABSOLUTE>;
+	using RelativeAndAbsoluteXRefSignature = XRefSignature<XRefTypes::RELATIVE_AND_ABSOLUTE>;
+
+	static_assert(Signature<RelativeXRefSignature>);
+	static_assert(Signature<AbsoluteXRefSignature>);
+	static_assert(Signature<RelativeAndAbsoluteXRefSignature>);
 }
 
 #endif

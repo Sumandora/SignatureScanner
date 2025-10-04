@@ -178,7 +178,7 @@ TEST(XRefPattern, AbsoluteForwards)
 {
 	init_xref_array();
 
-	auto signature = XRefSignature<SignatureScanner::XRefTypes::ABSOLUTE>{ target };
+	auto signature = AbsoluteXRefSignature{ target };
 	auto hit = signature.next(absolute_ref.begin(), absolute_ref.end());
 
 	EXPECT_NE(hit, absolute_ref.end());
@@ -190,7 +190,7 @@ TEST(XRefPattern, RelativeForwards)
 {
 	init_xref_array();
 
-	auto signature = XRefSignature<SignatureScanner::XRefTypes::RELATIVE>{ reinterpret_cast<std::uintptr_t>(&target) };
+	auto signature = RelativeXRefSignature{ reinterpret_cast<std::uintptr_t>(&target) };
 	auto hit = signature.next(relative_ref.begin(), relative_ref.end());
 
 	EXPECT_NE(hit, relative_ref.end());
@@ -202,7 +202,7 @@ TEST(XRefPattern, AbsoluteBackwards)
 {
 	init_xref_array();
 
-	auto signature = XRefSignature<SignatureScanner::XRefTypes::ABSOLUTE>{ target };
+	auto signature = AbsoluteXRefSignature{ target };
 	auto hit = signature.prev(absolute_ref.rbegin(), absolute_ref.rend());
 
 	EXPECT_NE(hit, absolute_ref.rend());
@@ -214,7 +214,7 @@ TEST(XRefPattern, RelativeBackwards)
 {
 	init_xref_array();
 
-	auto signature = XRefSignature<SignatureScanner::XRefTypes::RELATIVE>{ reinterpret_cast<std::uintptr_t>(&target) };
+	auto signature = RelativeXRefSignature{ reinterpret_cast<std::uintptr_t>(&target) };
 	auto hit = signature.prev(relative_ref.rbegin(), relative_ref.rend());
 
 	EXPECT_NE(hit, relative_ref.rend());
@@ -226,8 +226,8 @@ TEST(XRefPattern, All)
 {
 	init_xref_array();
 
-	auto absolute_sig = XRefSignature<SignatureScanner::XRefTypes::ABSOLUTE>{ target };
-	auto relative_sig = XRefSignature<SignatureScanner::XRefTypes::RELATIVE>{ reinterpret_cast<std::uintptr_t>(&target) };
+	auto absolute_sig = AbsoluteXRefSignature{ target };
+	auto relative_sig = RelativeXRefSignature{ reinterpret_cast<std::uintptr_t>(&target) };
 	std::vector<decltype(absolute_ref)::iterator> hits;
 	absolute_sig.all(absolute_ref.begin(), absolute_ref.end(), std::back_inserter(hits));
 	relative_sig.all(relative_ref.begin(), relative_ref.end(), std::back_inserter(hits));
