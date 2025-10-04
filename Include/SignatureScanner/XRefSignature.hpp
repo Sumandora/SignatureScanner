@@ -6,64 +6,43 @@
 #include "detail/ByteConverter.hpp"
 
 #include <bit>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <type_traits>
+#include <variant>
 
 namespace SignatureScanner {
-	class XRefTypes {
-		bool relative_enabled : 1;
-		bool absolute_enabled : 1;
-
-		constexpr XRefTypes(bool relative, bool absolute)
-			: relative_enabled(relative)
-			, absolute_enabled(absolute)
-		{
-		}
-
-	public:
-		[[nodiscard]] constexpr bool is_relative() const
-		{
-			return relative_enabled;
-		}
-
-		[[nodiscard]] constexpr bool is_absolute() const
-		{
-			return absolute_enabled;
-		}
-
-		static constexpr XRefTypes relative()
-		{
-			return { true, false };
-		}
-
-		static constexpr XRefTypes absolute()
-		{
-			return { false, true };
-		}
-
-		static constexpr XRefTypes relative_and_absolute()
-		{
-			return { true, true };
-		}
+	enum class XRefTypes : std::uint8_t {
+		RELATIVE,
+		ABSOLUTE,
+		RELATIVE_AND_ABSOLUTE,
 	};
 
+	template <XRefTypes Types>
 	class XRefSignature {
 		static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big, "Mixed endian is not supported");
+
+		static constexpr bool IS_ABSOLUTE = Types == XRefTypes::ABSOLUTE || Types == XRefTypes::RELATIVE_AND_ABSOLUTE;
+		static constexpr bool IS_RELATIVE = Types == XRefTypes::RELATIVE || Types == XRefTypes::RELATIVE_AND_ABSOLUTE;
 
 		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
 
 		const std::uintptr_t address;
-		const bool absolute : 1;
-		const std::uint8_t instruction_length : /* ceil(log2(x86 max instruction length: 15)) = */ 4; // If instruction_length == 0 then relative search is disabled
+		[[no_unique_address]] const std::conditional_t<IS_RELATIVE, std::uint8_t, std::monostate> instruction_length;
 
 	public:
-		explicit constexpr XRefSignature(XRefTypes types, std::uintptr_t address, std::uint8_t instruction_length = 4)
+		explicit constexpr XRefSignature(std::uintptr_t address)
+			requires(Types == XRefTypes::ABSOLUTE)
 			: address(address)
-			, absolute(types.is_absolute())
-			, instruction_length(types.is_relative() ? instruction_length : 0)
+			, instruction_length()
+		{
+		}
+
+		explicit constexpr XRefSignature(std::uintptr_t address, std::uint8_t instruction_length = 4)
+			requires(Types != XRefTypes::ABSOLUTE)
+			: address(address)
+			, instruction_length(instruction_length)
 		{
 		}
 
@@ -147,12 +126,12 @@ namespace SignatureScanner {
 		template <std::input_iterator Iter>
 		[[nodiscard]] constexpr bool does_match(const Iter& iter, const std::sentinel_for<Iter> auto& end, std::uintptr_t location) const
 		{
-			if (is_absolute())
+			if constexpr (IS_ABSOLUTE)
 				if (auto bytes = detail::convert_bytes<std::uintptr_t>(iter, end))
 					if (does_absolute_match(bytes.value()))
 						return true;
 
-			if (is_relative())
+			if constexpr (IS_RELATIVE)
 				if (auto bytes = detail::convert_bytes<RelAddrType>(iter, end))
 					if (does_relative_match(bytes.value(), location))
 						return true;
@@ -162,11 +141,11 @@ namespace SignatureScanner {
 
 		[[nodiscard]] constexpr bool does_match(std::uintptr_t number, std::uintptr_t location) const
 		{
-			if (is_absolute())
+			if constexpr (IS_ABSOLUTE)
 				if (does_absolute_match(number))
 					return true;
 
-			if (is_relative())
+			if constexpr (IS_RELATIVE)
 				if (does_relative_match(static_cast<RelAddrType>(number), location))
 					return true;
 
@@ -188,15 +167,15 @@ namespace SignatureScanner {
 				current++;
 			}
 		}
-
+		
 		[[nodiscard]] constexpr bool is_absolute() const
 		{
-			return absolute;
+			return IS_ABSOLUTE;
 		}
 
 		[[nodiscard]] constexpr bool is_relative() const
 		{
-			return instruction_length > 0;
+			return IS_RELATIVE;
 		}
 
 		[[nodiscard]] constexpr bool does_absolute_match(std::uintptr_t number) const
@@ -215,7 +194,9 @@ namespace SignatureScanner {
 		}
 	};
 
-	static_assert(Signature<XRefSignature>);
+	static_assert(Signature<XRefSignature<XRefTypes::RELATIVE>>);
+	static_assert(Signature<XRefSignature<XRefTypes::ABSOLUTE>>);
+	static_assert(Signature<XRefSignature<XRefTypes::RELATIVE_AND_ABSOLUTE>>);
 }
 
 #endif
