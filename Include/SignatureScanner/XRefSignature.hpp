@@ -13,34 +13,34 @@
 #include <variant>
 
 namespace SignatureScanner {
-	enum class XRefTypes : std::uint8_t {
+	enum class XRefType : std::uint8_t {
 		RELATIVE,
 		ABSOLUTE,
 		RELATIVE_AND_ABSOLUTE,
 	};
 
-	template <XRefTypes Types>
+	template <XRefType Types>
 	class XRefSignature {
 		static_assert(std::endian::native == std::endian::little || std::endian::native == std::endian::big, "Mixed endian is not supported");
 
-		static constexpr bool IS_RELATIVE = Types == XRefTypes::RELATIVE || Types == XRefTypes::RELATIVE_AND_ABSOLUTE;
-		static constexpr bool IS_ABSOLUTE = Types == XRefTypes::ABSOLUTE || Types == XRefTypes::RELATIVE_AND_ABSOLUTE;
-
-		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
+		static constexpr bool IS_RELATIVE = Types == XRefType::RELATIVE || Types == XRefType::RELATIVE_AND_ABSOLUTE;
+		static constexpr bool IS_ABSOLUTE = Types == XRefType::ABSOLUTE || Types == XRefType::RELATIVE_AND_ABSOLUTE;
 
 		const std::uintptr_t address;
 		[[no_unique_address]] const std::conditional_t<IS_RELATIVE, std::uint8_t, std::monostate> instruction_length;
 
 	public:
+		using RelAddrType = std::conditional_t<sizeof(void*) == 8, std::int32_t, std::int16_t>;
+
 		explicit constexpr XRefSignature(std::uintptr_t address)
-			requires(Types == XRefTypes::ABSOLUTE)
+			requires(Types == XRefType::ABSOLUTE)
 			: address(address)
 			, instruction_length()
 		{
 		}
 
-		explicit constexpr XRefSignature(std::uintptr_t address, std::uint8_t instruction_length = 4)
-			requires(Types != XRefTypes::ABSOLUTE)
+		explicit constexpr XRefSignature(std::uintptr_t address, std::uint8_t instruction_length = sizeof(RelAddrType))
+			requires(Types != XRefType::ABSOLUTE)
 			: address(address)
 			, instruction_length(instruction_length)
 		{
@@ -206,9 +206,9 @@ namespace SignatureScanner {
 		}
 	};
 
-	using RelativeXRefSignature = XRefSignature<XRefTypes::RELATIVE>;
-	using AbsoluteXRefSignature = XRefSignature<XRefTypes::ABSOLUTE>;
-	using RelativeAndAbsoluteXRefSignature = XRefSignature<XRefTypes::RELATIVE_AND_ABSOLUTE>;
+	using RelativeXRefSignature = XRefSignature<XRefType::RELATIVE>;
+	using AbsoluteXRefSignature = XRefSignature<XRefType::ABSOLUTE>;
+	using RelativeAndAbsoluteXRefSignature = XRefSignature<XRefType::RELATIVE_AND_ABSOLUTE>;
 
 	static_assert(Signature<RelativeXRefSignature>);
 	static_assert(Signature<AbsoluteXRefSignature>);
